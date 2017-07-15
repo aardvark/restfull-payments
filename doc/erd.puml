@@ -1,0 +1,43 @@
+@startuml
+title  Resource diagram
+
+object User {
+  link: /api/users/:id
+  id
+  accounts: [Account]
+  transactions : [Transaction]
+  allows: GET, OPTIONS
+}
+
+
+object Account {
+  link: /api/accounts/:id
+  id
+  user: User
+  transactions: [Transaction]
+  allows: GET, OPTIONS
+}
+
+object Transaction {
+  link: /api/transactions/:id
+  id
+  from: Account
+  to: Account
+  amount: Amount
+  status: Status
+  allows: GET, POST, DELETE, OPTIONS
+}
+
+User --{ Account
+User --{ Transaction
+
+Account --{ Transaction
+
+class Status {
+  Open
+  Processing
+  Processed
+  Closed
+}
+
+@enduml
