@@ -4,6 +4,7 @@ import ru.latuhin.revolut.payments.rest.endpoint.dao.Account
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Status
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Transaction
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.stream.Collectors
 
@@ -11,7 +12,7 @@ class TransactionsRestTest extends Specification {
   String endpoint = 'localhost:4567'
   def transformer = new YamlTransformer()
 
-  def "HTTP GET request for transaction should be present"() {
+  def "GET request should resolve"() {
     given:
     long id = 1
     def storage = new TreeMap()
@@ -33,7 +34,7 @@ class TransactionsRestTest extends Specification {
     transaction == storage[1l]
   }
 
-  def "HTTP GET request for missing transaction should return 404 code"() {
+  def "GET request for missing should return 404 code"() {
     given:
     long id = 1
     def storage = new TreeMap()
@@ -48,7 +49,7 @@ class TransactionsRestTest extends Specification {
     connection.responseCode == 404
   }
 
-  def "HTTP POST for transaction should add new transaction to the storage"() {
+  def "POST for transaction should add new transaction to the storage"() {
     long from = 2
     long to = 3
     def amount = 22.2
@@ -76,7 +77,7 @@ class TransactionsRestTest extends Specification {
     storage.size() == 2
   }
 
-  def "HTTP POST transaction should work correctly in parallel"() {
+  def "POST transaction should work correctly in parallel"() {
     long from = 2
     long to = 3
     def numberOfTransaction = 100
@@ -104,15 +105,16 @@ class TransactionsRestTest extends Specification {
     accounts[from].amount == BigDecimal.ZERO
   }
 
-  def "Transaction create should fail if from account is missing"() {
-    long from = -1
-    long to = -1
+  @Unroll
+  def "POST create should fail if #account account is missing"() {
+    given:
     def amount = 22.2
     def storage = new TreeMap<>()
     def app = new App()
-    def accounts = [:]
     app.setStorage(storage, accounts)
     App.main(null)
+
+    when:
     def url = new URL(
         "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
     )
@@ -120,28 +122,15 @@ class TransactionsRestTest extends Specification {
     connection.setRequestMethod("POST")
     connection.setRequestProperty("Accept", "text/plain")
 
-    expect:
+    then:
     connection.responseCode == 404
-  }
 
-  def "Transaction create should fail if to account is missing"() {
-    long from = 1
-    long to = -1
-    def amount = 22.2
-    def storage = new TreeMap<>()
-    def app = new App()
-    def accounts = [(from): new Account(from, 0)]
-    app.setStorage(storage, accounts)
-    App.main(null)
-    def url = new URL(
-        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
-    )
-    def connection = url.openConnection() as HttpURLConnection
-    connection.setRequestMethod("POST")
-    connection.setRequestProperty("Accept", "text/plain")
+    where:
+    from | to | accounts
+    -1   | -1 | [:]
+    1    | -1 | [(from): new Account(from, 0)]
 
-    expect:
-    connection.responseCode == 404
+    account = from == -1 ? "from" : "to"
   }
 
   def "post should fail if amount on account is not enough"() {
