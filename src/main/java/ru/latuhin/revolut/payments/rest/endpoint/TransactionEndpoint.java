@@ -4,19 +4,24 @@ import static spark.Spark.get;
 import static spark.Spark.post;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import ru.latuhin.revolut.payments.rest.endpoint.dao.Account;
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Transaction;
 
-public class Api {
+public class TransactionEndpoint {
 
+  public Map<Long, Account> accountStorage;
   NavigableMap<Long, Transaction> transactionStorage;
   private Lock transactionWrite = new ReentrantLock();
 
-  public Api(
-      NavigableMap<Long, Transaction> transactionStorage) {
+  public TransactionEndpoint(
+      NavigableMap<Long, Transaction> transactionStorage,
+      Map<Long, Account> accountStorage) {
     this.transactionStorage = transactionStorage;
+    this.accountStorage = accountStorage;
   }
 
   public void getTransaction() {
@@ -32,11 +37,31 @@ public class Api {
     post("/api/1.0/transaction/from/:from/to/:to/amount/:amount", "text/plain",
         (request, response) -> {
           long from = getLongParam(request.params(":from"));
+
+          if (!accountStorage.containsKey(from)) {
+            response.status(404);
+            return response;
+          }
+
           long to = getLongParam(request.params(":to"));
+          if (!accountStorage.containsKey(to)) {
+            response.status(404);
+            return response;
+          }
+
           BigDecimal amount = new BigDecimal(request.params(":amount"));
+
+          Account fromAccount = accountStorage.get(from);
+          if (fromAccount.amount.compareTo(amount) < 0) {
+            response.status(424);
+            return response;
+          }
+
           Transaction transaction;
           try {
             transactionWrite.lock();
+            fromAccount = new Account(fromAccount, amount);
+            accountStorage.put(fromAccount.id, fromAccount);
             transaction = createTransaction(from, to, amount);
           } finally {
             transactionWrite.unlock();

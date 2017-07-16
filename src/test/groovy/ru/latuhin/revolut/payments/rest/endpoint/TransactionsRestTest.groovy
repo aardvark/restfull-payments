@@ -1,11 +1,11 @@
 package ru.latuhin.revolut.payments.rest.endpoint
 
+import ru.latuhin.revolut.payments.rest.endpoint.dao.Account
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Status
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Transaction
 import spock.lang.Specification
 
 import java.util.stream.Collectors
-import java.util.stream.Stream
 
 class TransactionsRestTest extends Specification {
   String endpoint = 'localhost:4567'
@@ -17,7 +17,7 @@ class TransactionsRestTest extends Specification {
     def storage = new TreeMap()
     storage[id] = new Transaction(1l, 4l, 5l, 22.1, Status.Open)
     def app = new App()
-    app.setStorage(storage)
+    app.setStorage(storage, [:])
     App.main(null)
     def connection = new URL(
         "http://$endpoint/api/1.0/transaction/$id"
@@ -38,7 +38,7 @@ class TransactionsRestTest extends Specification {
     long id = 1
     def storage = new TreeMap()
     def app = new App()
-    app.setStorage(storage)
+    app.setStorage(storage, [:])
     App.main(null)
     def connection = new URL(
         "http://$endpoint/api/1.0/transaction/$id"
@@ -49,13 +49,13 @@ class TransactionsRestTest extends Specification {
   }
 
   def "HTTP POST for transaction should add new transaction to the storage"() {
-    long id = 1
     long from = 2
     long to = 3
     def amount = 22.2
     def storage = new TreeMap<>()
     def app = new App()
-    app.setStorage(storage)
+    def accounts = [(from): new Account(from, 0, new BigDecimal(100)), (to): new Account(to, 0)]
+    app.setStorage(storage, accounts)
     App.main(null)
     List<HttpURLConnection> conns = []
     2.times {
@@ -79,13 +79,16 @@ class TransactionsRestTest extends Specification {
   def "HTTP POST transaction should work correctly in parallel"() {
     long from = 2
     long to = 3
+    def numberOfTransaction = 100
     def amount = 10
     def storage = new TreeMap<>()
     def app = new App()
-    app.setStorage(storage)
+    def accounts = [(from): new Account(from, 0, new BigDecimal(numberOfTransaction * amount)), (to):
+        new Account(to, 0)]
+    app.setStorage(storage, accounts)
     App.main(null)
     List<HttpURLConnection> conns = []
-    1000.times {
+    numberOfTransaction.times {
       def url = new URL(
           "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
       )
@@ -97,8 +100,90 @@ class TransactionsRestTest extends Specification {
     def codes = conns.parallelStream().map({ it -> it.responseCode }).collect(Collectors.toList())
 
     expect:
-    storage.size() == 1000
+    storage.size() == numberOfTransaction
+    accounts[from].amount == BigDecimal.ZERO
+  }
 
+  def "Transaction create should fail if from account is missing"() {
+    long from = -1
+    long to = -1
+    def amount = 22.2
+    def storage = new TreeMap<>()
+    def app = new App()
+    def accounts = [:]
+    app.setStorage(storage, accounts)
+    App.main(null)
+    def url = new URL(
+        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+    )
+    def connection = url.openConnection() as HttpURLConnection
+    connection.setRequestMethod("POST")
+    connection.setRequestProperty("Accept", "text/plain")
+
+    expect:
+    connection.responseCode == 404
+  }
+
+  def "Transaction create should fail if to account is missing"() {
+    long from = 1
+    long to = -1
+    def amount = 22.2
+    def storage = new TreeMap<>()
+    def app = new App()
+    def accounts = [(from): new Account(from, 0)]
+    app.setStorage(storage, accounts)
+    App.main(null)
+    def url = new URL(
+        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+    )
+    def connection = url.openConnection() as HttpURLConnection
+    connection.setRequestMethod("POST")
+    connection.setRequestProperty("Accept", "text/plain")
+
+    expect:
+    connection.responseCode == 404
+  }
+
+  def "post should fail if amount on account is not enough"() {
+    long from = 1
+    long to = 2
+    def amount = 22.2
+    def storage = new TreeMap<>()
+    def app = new App()
+    def accounts = [(from): new Account(from, 0), (to): new Account(to, 0)]
+    app.setStorage(storage, accounts)
+    App.main(null)
+    def url = new URL(
+        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+    )
+    def connection = url.openConnection() as HttpURLConnection
+    connection.setRequestMethod("POST")
+    connection.setRequestProperty("Accept", "text/plain")
+
+    expect:
+    connection.responseCode == 424
+  }
+
+  def "post should deduce from account value by transaction amount"() {
+    long from = 1
+    long to = 2
+    def amount = 42.0
+    def storage = new TreeMap<>()
+    def app = new App()
+    def fromStaringAmount = new BigDecimal(100)
+    def accounts = [(from): new Account(from, 0, fromStaringAmount), (to): new Account(to, 0)]
+    app.setStorage(storage, accounts)
+    App.main(null)
+    def url = new URL(
+        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+    )
+    def connection = url.openConnection() as HttpURLConnection
+    connection.setRequestMethod("POST")
+    connection.setRequestProperty("Accept", "text/plain")
+
+    expect:
+    connection.responseCode == 200
+    accounts[from].amount == fromStaringAmount.minus(amount)
   }
 
 

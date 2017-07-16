@@ -41,6 +41,11 @@ public class Account implements SerializableResource {
     this.amount = amount;
   }
 
+  public Account(Account fromAccount, BigDecimal amount) {
+    this(fromAccount.id, fromAccount.user.id, fromAccount.amount.subtract(amount));
+
+  }
+
   public void serialize(JsonGenerator gen) {
     try {
       gen.writeTypeId("account");
