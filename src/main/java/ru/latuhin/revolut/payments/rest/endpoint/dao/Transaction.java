@@ -3,6 +3,7 @@ package ru.latuhin.revolut.payments.rest.endpoint.dao;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Objects;
 import ru.latuhin.revolut.payments.rest.endpoint.serializers.SerializableResource;
 
 /**
@@ -31,11 +32,13 @@ import ru.latuhin.revolut.payments.rest.endpoint.serializers.SerializableResourc
  *
  */
 public class Transaction implements SerializableResource {
-  public final long id;
-  public final LinkResource from;
-  public final LinkResource to;
-  public final BigDecimal amount;
-  public final Status status;
+  public long id;
+  public LinkResource from;
+  public LinkResource to;
+  public BigDecimal amount;
+  public Status status;
+
+  public Transaction(){}
 
   public Transaction(long id, long from, long to, BigDecimal amount,
       Status status) {
@@ -44,6 +47,10 @@ public class Transaction implements SerializableResource {
     this.to = new LinkResource("account", to);
     this.amount = amount;
     this.status = status;
+  }
+
+  public Transaction(long id, long from, long to, BigDecimal amount) {
+    this(id, from, to, amount, Status.Open);
   }
 
   public void serialize(JsonGenerator gen) {
@@ -59,5 +66,33 @@ public class Transaction implements SerializableResource {
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Transaction that = (Transaction) o;
+    return id == that.id &&
+        Objects.equals(from, that.from) &&
+        Objects.equals(to, that.to) &&
+        Objects.equals(amount, that.amount) &&
+        status == that.status;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, from, to, amount, status);
+  }
+
+  @Override
+  public String toString() {
+    return "Transaction{" +
+        "id=" + id +
+        '}';
   }
 }

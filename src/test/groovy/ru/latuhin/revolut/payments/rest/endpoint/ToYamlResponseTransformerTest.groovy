@@ -9,7 +9,7 @@ import spock.lang.Specification
 class ToYamlResponseTransformerTest extends Specification {
     def "user"() {
         given:
-        def transformer = new ToYamlResponseTransformer()
+        def transformer = new YamlTransformer()
         def result = transformer.render(new User(2))
 
         expect:
@@ -29,7 +29,7 @@ transactions:
 
     def "account"() {
         given:
-        def transformer = new ToYamlResponseTransformer()
+        def transformer = new YamlTransformer()
         def result = transformer.render(new Account(0, 1))
 
         expect:
@@ -49,7 +49,7 @@ transactions:
 
     def "transaction"() {
         given:
-        def transformer = new ToYamlResponseTransformer()
+        def transformer = new YamlTransformer()
         def result = transformer.render(new Transaction(1, 2, 3, new BigDecimal(10.5), Status.Open))
 
         expect:
