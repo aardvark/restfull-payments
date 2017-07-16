@@ -7,19 +7,19 @@ import ru.latuhin.revolut.payments.rest.endpoint.dao.Transaction;
 
 public class App {
 
-  public static TransactionEndpoint api;
+  public static TransactionEndpoint transactionEndpoint;
 
   public static void main(String[] args) {
-    api.getTransaction();
-    api.postTransaction();
+    transactionEndpoint.getTransaction();
+    transactionEndpoint.postTransaction();
   }
 
   public void setStorage(NavigableMap<Long, Transaction> map, Map<Long, Account> accountMap) {
-    if (api == null) {
-      api = new TransactionEndpoint(map, accountMap);
+    if (transactionEndpoint == null) {
+      transactionEndpoint = new TransactionEndpoint(map, accountMap);
     } else {
-      api.transactionStorage = map;
-      api.accountStorage = accountMap;
+      transactionEndpoint.transactionStorage = map;
+      transactionEndpoint.accountStorage = accountMap;
     }
   }
 }

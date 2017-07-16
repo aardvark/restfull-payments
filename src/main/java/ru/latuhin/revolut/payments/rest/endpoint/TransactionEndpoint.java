@@ -13,7 +13,7 @@ import ru.latuhin.revolut.payments.rest.endpoint.dao.Transaction;
 
 public class TransactionEndpoint {
 
-  public Map<Long, Account> accountStorage;
+  Map<Long, Account> accountStorage;
   NavigableMap<Long, Transaction> transactionStorage;
   private Lock transactionWrite = new ReentrantLock();
 
