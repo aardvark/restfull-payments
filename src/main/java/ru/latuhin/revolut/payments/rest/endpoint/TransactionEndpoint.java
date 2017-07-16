@@ -60,8 +60,7 @@ public class TransactionEndpoint {
           Transaction transaction;
           try {
             transactionWrite.lock();
-            fromAccount = new Account(fromAccount, amount);
-            accountStorage.put(fromAccount.id, fromAccount);
+            updateAccount(amount, fromAccount);
             transaction = createTransaction(from, to, amount);
           } finally {
             transactionWrite.unlock();
@@ -70,6 +69,11 @@ public class TransactionEndpoint {
           return response;
 
         });
+  }
+
+  private void updateAccount(BigDecimal amount, Account fromAccount) {
+    fromAccount = new Account(fromAccount, amount);
+    accountStorage.put(fromAccount.id, fromAccount);
   }
 
   private Transaction createTransaction(long from, long to, BigDecimal amount) {
