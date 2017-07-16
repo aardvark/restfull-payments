@@ -11,8 +11,9 @@ import java.util.stream.Stream;
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Account;
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Transaction;
 import ru.latuhin.revolut.payments.rest.endpoint.dao.User;
-import ru.latuhin.revolut.payments.rest.endpoint.serializers.TransactionDeserializer;
+import ru.latuhin.revolut.payments.rest.endpoint.serializers.AccountDeserializer;
 import ru.latuhin.revolut.payments.rest.endpoint.serializers.ResourceSerializer;
+import ru.latuhin.revolut.payments.rest.endpoint.serializers.TransactionDeserializer;
 import spark.ResponseTransformer;
 
 public class YamlTransformer implements ResponseTransformer {
@@ -28,6 +29,7 @@ public class YamlTransformer implements ResponseTransformer {
         c -> resources.addSerializer(c, new ResourceSerializer<>())
     );
     resources.addDeserializer(Transaction.class, new TransactionDeserializer());
+    resources.addDeserializer(Account.class, new AccountDeserializer());
     mapper.registerModule(resources);
   }
 

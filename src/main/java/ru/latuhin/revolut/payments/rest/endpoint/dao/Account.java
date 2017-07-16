@@ -3,6 +3,7 @@ package ru.latuhin.revolut.payments.rest.endpoint.dao;
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.Objects;
 import ru.latuhin.revolut.payments.rest.endpoint.serializers.SerializableResource;
 
 /**
@@ -11,6 +12,7 @@ import ru.latuhin.revolut.payments.rest.endpoint.serializers.SerializableResourc
  * id: {id}
  * href: /api/accounts/{id}
  * user:
+ *   id:{userId}
  *   rel: resource/user
  *   href: /api/users/{userId}
  * transactions:
@@ -54,9 +56,38 @@ public class Account implements SerializableResource {
       gen.writeStringField("href", "/api/account/" + this.id);
       gen.writeObjectField("user", this.user);
       gen.writeObjectField("transactions", this.transactions);
+      gen.writeNumberField("amount", this.amount.doubleValue());
       gen.writeEndObject();
     } catch (IOException e) {
       e.printStackTrace();
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Account account = (Account) o;
+    return id == account.id &&
+        Objects.equals(user, account.user) &&
+        Objects.equals(transactions, account.transactions) &&
+        Objects.equals(amount, account.amount);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, user, transactions, amount);
+  }
+
+  @Override
+  public String toString() {
+    return "Account{" +
+        "id=" + id +
+        ", amount=" + amount +
+        '}';
   }
 }

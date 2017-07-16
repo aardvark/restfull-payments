@@ -44,6 +44,7 @@ user:
 transactions:
   rel: "collection/transactions"
   href: "/api/accounts/0/transactions"
+amount: 0.0
 '''
     }
 

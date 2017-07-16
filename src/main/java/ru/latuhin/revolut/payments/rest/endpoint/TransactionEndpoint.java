@@ -1,8 +1,5 @@
 package ru.latuhin.revolut.payments.rest.endpoint;
 
-import static spark.Spark.get;
-import static spark.Spark.post;
-
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -10,6 +7,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Account;
 import ru.latuhin.revolut.payments.rest.endpoint.dao.Transaction;
+import spark.Spark;
 
 public class TransactionEndpoint {
 
@@ -17,25 +15,29 @@ public class TransactionEndpoint {
   NavigableMap<Long, Transaction> transactionStorage;
   private Lock transactionWrite = new ReentrantLock();
   private Lock accountWrite = new ReentrantLock();
+  private YamlTransformer transformer = new YamlTransformer();
 
   public TransactionEndpoint(
       NavigableMap<Long, Transaction> transactionStorage,
-      Map<Long, Account> accountStorage) {
+      Map<Long, Account> accountStorage,
+      YamlTransformer transformer) {
+    this.transformer = transformer;
     this.transactionStorage = transactionStorage;
     this.accountStorage = accountStorage;
   }
 
-  public void getTransaction() {
-    get("/api/1.0/transaction/:id",
+  public void get() {
+    transformer = new YamlTransformer();
+    Spark.get("/api/1.0/transaction/:id",
         (req, res) -> {
           long id = getLongParam(req.params(":id"));
           return transactionStorage.get(id);
         },
-        new YamlTransformer());
+        transformer);
   }
 
-  public void postTransaction() {
-    post("/api/1.0/transaction/from/:from/to/:to/amount/:amount", "text/plain",
+  public void post() {
+    Spark.post("/api/1.0/transaction/from/:from/to/:to/amount/:amount", "text/plain",
         (request, response) -> {
           long from = getLongParam(request.params(":from"));
 
