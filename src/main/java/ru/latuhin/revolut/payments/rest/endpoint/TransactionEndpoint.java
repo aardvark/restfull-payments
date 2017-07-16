@@ -16,6 +16,7 @@ public class TransactionEndpoint {
   Map<Long, Account> accountStorage;
   NavigableMap<Long, Transaction> transactionStorage;
   private Lock transactionWrite = new ReentrantLock();
+  private Lock accountWrite = new ReentrantLock();
 
   public TransactionEndpoint(
       NavigableMap<Long, Transaction> transactionStorage,
@@ -59,21 +60,22 @@ public class TransactionEndpoint {
 
           Transaction transaction;
           try {
-            transactionWrite.lock();
-            updateAccount(amount, fromAccount);
-            transaction = createTransaction(from, to, amount);
+            accountWrite.lock();
+            try {
+              transactionWrite.lock();
+              transaction = createTransaction(from, to, amount);
+            } finally {
+              transactionWrite.unlock();
+            }
+            accountStorage.compute(from, (aLong, account) -> new Account(account, amount));
           } finally {
-            transactionWrite.unlock();
+            accountWrite.unlock();
           }
+
           response.header("Link", "/api/1.0/transaction/" + transaction.id);
           return response;
 
         });
-  }
-
-  private void updateAccount(BigDecimal amount, Account fromAccount) {
-    fromAccount = new Account(fromAccount, amount);
-    accountStorage.put(fromAccount.id, fromAccount);
   }
 
   private Transaction createTransaction(long from, long to, BigDecimal amount) {
