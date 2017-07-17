@@ -1,6 +1,7 @@
 package ru.latuhin.payments.rest.endpoint
 
 import ru.latuhin.payments.rest.endpoint.dao.Account
+import ru.latuhin.payments.rest.endpoint.dao.Error
 import ru.latuhin.payments.rest.endpoint.dao.Status
 import ru.latuhin.payments.rest.endpoint.dao.Transaction
 import spock.lang.Specification
@@ -26,11 +27,11 @@ class TransactionsRestTest extends Specification {
 
     expect:
     connection.responseCode == 200
-    def s = connection.inputStream.withCloseable { iStream ->
+    def body = connection.inputStream.withCloseable { iStream ->
       new BufferedReader(new InputStreamReader(iStream))
           .lines().collect(Collectors.joining("\n"))
     }
-    def transaction = transformer.toResource(Transaction.class, s)
+    def transaction = transformer.toResource(Transaction.class, body)
     transaction == storage[1l]
   }
 
@@ -41,12 +42,21 @@ class TransactionsRestTest extends Specification {
     def app = new App()
     app.setStorage(storage, [:])
     App.main(null)
+
     def connection = new URL(
         "http://$endpoint/api/1.0/transaction/$id"
     ).openConnection() as HttpURLConnection
 
     expect:
     connection.responseCode == 404
+    def body = connection.errorStream.withCloseable { iStream ->
+      new BufferedReader(new InputStreamReader(iStream))
+          .lines().collect(Collectors.joining("\n"))
+    }
+    def error = transformer.toResource(Error.class, body)
+    error.errorCode == 404
+    error.request == "/api/1.0/transaction/$id"
+    error.message == "Transaction with id $id not found"
   }
 
   def "POST for transaction should add new transaction to the storage"() {

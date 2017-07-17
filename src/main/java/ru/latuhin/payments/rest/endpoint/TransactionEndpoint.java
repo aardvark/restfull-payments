@@ -6,6 +6,7 @@ import java.util.NavigableMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
+import ru.latuhin.payments.rest.endpoint.dao.Error;
 import ru.latuhin.payments.rest.endpoint.dao.Transaction;
 import spark.Spark;
 
@@ -28,10 +29,15 @@ public class TransactionEndpoint {
 
   public void get() {
     transformer = new YamlTransformer();
-    Spark.get("/api/1.0/transaction/:id",
+    Spark.get("/api/1.0/transaction/:id", "application/yaml",
         (req, res) -> {
           long id = getLongParam(req.params(":id"));
-          return transactionStorage.get(id);
+          Transaction transaction = transactionStorage.get(id);
+          if (transaction == null) {
+            res.status(404);
+            return new Error(req.pathInfo(), 404, "Transaction with id " + id + " not found");
+          }
+          return transaction;
         },
         transformer);
   }
