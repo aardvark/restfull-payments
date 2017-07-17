@@ -49,13 +49,13 @@ public class TransactionEndpoint {
 
           if (!accountStorage.containsKey(from)) {
             response.status(404);
-            return response;
+            return new Error(request.pathInfo(), 404, "Account with id " + from + " not found");
           }
 
           long to = getLongParam(request.params(":to"));
           if (!accountStorage.containsKey(to)) {
             response.status(404);
-            return response;
+            return new Error(request.pathInfo(), 404, "Account with id " + to + " not found");
           }
 
           BigDecimal amount = new BigDecimal(request.params(":amount"));
@@ -63,7 +63,7 @@ public class TransactionEndpoint {
           Account fromAccount = accountStorage.get(from);
           if (fromAccount.amount.compareTo(amount) < 0) {
             response.status(424);
-            return response;
+            return new Error(request.pathInfo(), 424, "Account with id " + from + " don't have enough balance to open transaction");
           }
 
           Transaction transaction;

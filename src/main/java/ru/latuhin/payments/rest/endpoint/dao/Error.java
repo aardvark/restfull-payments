@@ -19,6 +19,8 @@ public class Error implements SerializableResource {
   public int errorCode;
   public String message;
 
+  public Error(){}
+
   public Error(String request, int errorCode, String message) {
     this.request = request;
     this.errorCode = errorCode;

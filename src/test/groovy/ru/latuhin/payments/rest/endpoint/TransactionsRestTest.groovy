@@ -27,13 +27,11 @@ class TransactionsRestTest extends Specification {
 
     expect:
     connection.responseCode == 200
-    def body = connection.inputStream.withCloseable { iStream ->
-      new BufferedReader(new InputStreamReader(iStream))
-          .lines().collect(Collectors.joining("\n"))
-    }
+    def body = grabBody(connection)
     def transaction = transformer.toResource(Transaction.class, body)
     transaction == storage[1l]
   }
+
 
   def "GET request for missing should return 404 code"() {
     given:
@@ -49,14 +47,12 @@ class TransactionsRestTest extends Specification {
 
     expect:
     connection.responseCode == 404
-    def body = connection.errorStream.withCloseable { iStream ->
-      new BufferedReader(new InputStreamReader(iStream))
-          .lines().collect(Collectors.joining("\n"))
-    }
-    def error = transformer.toResource(Error.class, body)
-    error.errorCode == 404
-    error.request == "/api/1.0/transaction/$id"
-    error.message == "Transaction with id $id not found"
+    def body = grabBody(connection)
+    transformer.toResource(Error.class, body) == new Error(
+       request: "/api/1.0/transaction/$id",
+       errorCode: connection.responseCode,
+       message: "Transaction with id $id not found"
+    )
   }
 
   def "POST for transaction should add new transaction to the storage"() {
@@ -183,6 +179,20 @@ class TransactionsRestTest extends Specification {
     expect:
     connection.responseCode == 200
     accounts[from].amount == fromStaringAmount.minus(amount)
+  }
+
+  private static String grabBody(HttpURLConnection connection) {
+    def stream
+    if (connection.responseCode == 404) {
+      stream = connection.errorStream
+    } else {
+      stream = connection.inputStream
+    }
+
+    stream.withCloseable { iStream ->
+      new BufferedReader(new InputStreamReader(iStream))
+          .lines().collect(Collectors.joining("\n"))
+    }
   }
 
 
