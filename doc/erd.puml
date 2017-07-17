@@ -15,6 +15,7 @@ object Account {
   id
   user: User
   transactions: [Transaction]
+  amount: Amount
   allows: GET, OPTIONS
 }
 
