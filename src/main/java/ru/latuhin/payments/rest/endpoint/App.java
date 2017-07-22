@@ -17,18 +17,19 @@ public class App {
     accountEndpoint.get();
   }
 
-  public void setStorage(NavigableMap<Long, Transaction> map, Map<Long, Account> accountMap) {
+  public void setStorage(NavigableMap<Long, Transaction> transactionMap, Map<Long, Account> accountMap) {
     if (transactionEndpoint == null) {
-      transactionEndpoint = new TransactionEndpoint(map, accountMap, yamlTransformer);
+      transactionEndpoint = new TransactionEndpoint(transactionMap, accountMap, yamlTransformer);
     } else {
-      transactionEndpoint.transactionStorage = map;
+      transactionEndpoint.transactionStorage = transactionMap;
       transactionEndpoint.accountStorage = accountMap;
     }
 
     if (accountEndpoint == null) {
-      accountEndpoint = new AccountEndpoint(accountMap, yamlTransformer);
+      accountEndpoint = new AccountEndpoint(accountMap, transactionMap, yamlTransformer);
     } else {
       accountEndpoint.storage = accountMap;
+      accountEndpoint.transactionStorage = transactionMap;
     }
   }
 }

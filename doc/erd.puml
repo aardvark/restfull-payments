@@ -29,11 +29,6 @@ object Transaction {
   allows: GET, POST, DELETE, OPTIONS
 }
 
-User --{ Account
-User --{ Transaction
-
-Account --{ Transaction
-
 class Status {
   Open
   Processing
@@ -41,4 +36,14 @@ class Status {
   Closed
 }
 
+User --{ Account
+User --{ Transaction
+
+Account --{ Transaction
+
+object Error {
+  responseCode: int
+  requestPath: String
+  errorMessage: String
+}
 @enduml

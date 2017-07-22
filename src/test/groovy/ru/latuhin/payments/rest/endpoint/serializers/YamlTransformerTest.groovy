@@ -28,4 +28,41 @@ amount: 10.5
     transaction.amount == 10.5
 
   }
+
+  def "list to resource"() {
+    given:
+    def yaml = '''---
+- !<transaction>
+  id: 0
+  href: "/api/transactions/0"
+  from:
+    id: 0
+    rel: "resource/account"
+    href: "/api/account/0"
+  to:
+    id: 0
+    rel: "resource/account"
+    href: "/api/account/0"
+  amount: 0.0
+- !<transaction>
+  id: 1
+  href: "/api/transactions/1"
+  from:
+    id: 1
+    rel: "resource/account"
+    href: "/api/account/1"
+  to:
+    id: 1
+    rel: "resource/account"
+    href: "/api/account/1"
+  amount: 0.0
+'''
+    def transformer = new YamlTransformer()
+    def list = transformer.toResource(List.class, yaml)
+
+    expect:
+    list.size() == 2
+    list[0] == new Transaction(0,0,0, 0.0)
+    list[1] == new Transaction(1,1,1,0.0)
+  }
 }

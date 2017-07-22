@@ -95,4 +95,8 @@ public class Transaction implements SerializableResource {
         "id=" + id +
         '}';
   }
+
+  public boolean matchAccount(long accountId) {
+    return from.id == accountId;
+  }
 }

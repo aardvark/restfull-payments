@@ -1,5 +1,6 @@
 package ru.latuhin.payments.rest.endpoint;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -7,6 +8,7 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.List;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,10 +43,18 @@ public class YamlTransformer implements ResponseTransformer {
 
   public <T> T toResource(Class<T> clz, String yaml) {
     ObjectReader objectReader = mapper.readerFor(clz);
+    if (clz == List.class) {
+      try {
+        return mapper.readValue(yaml, new TypeReference<List<Transaction>>(){});
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+
     try {
       return objectReader.readValue(yaml);
     } catch (IOException e) {
-      LOGGER.error("Unable to transform yaml to resource: "+ yaml, e);
+      LOGGER.error("Unable to transform yaml to resource (" + clz +"): "+ yaml, e);
     }
     return null;
   }

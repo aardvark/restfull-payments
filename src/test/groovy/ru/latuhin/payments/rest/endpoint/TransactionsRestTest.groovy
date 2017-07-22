@@ -27,7 +27,7 @@ class TransactionsRestTest extends Specification {
 
     expect:
     connection.responseCode == 200
-    def body = grabBody(connection)
+    def body = EndpointHelpers.grabBody(connection)
     def transaction = transformer.toResource(Transaction.class, body)
     transaction == storage[1l]
   }
@@ -47,8 +47,7 @@ class TransactionsRestTest extends Specification {
 
     expect:
     connection.responseCode == 404
-    def body = grabBody(connection)
-    transformer.toResource(Error.class, body) == new Error(
+    transformer.toResource(Error.class, EndpointHelpers.grabBody(connection)) == new Error(
        request: "/api/1.0/transaction/$id",
        errorCode: connection.responseCode,
        message: "Transaction with id $id not found"
@@ -157,6 +156,14 @@ class TransactionsRestTest extends Specification {
 
     expect:
     connection.responseCode == 424
+
+    def bodyError = transformer.toResource(Error.class, EndpointHelpers.grabBody(connection))
+    with (bodyError) {
+      request == "/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+      errorCode == connection.responseCode
+      message == "Account with id $from balance to low [need=$amount; have=0]"
+
+    }
   }
 
   def "post should deduce from account value by transaction amount"() {
@@ -179,20 +186,6 @@ class TransactionsRestTest extends Specification {
     expect:
     connection.responseCode == 200
     accounts[from].amount == fromStaringAmount.minus(amount)
-  }
-
-  private static String grabBody(HttpURLConnection connection) {
-    def stream
-    if (connection.responseCode == 404) {
-      stream = connection.errorStream
-    } else {
-      stream = connection.inputStream
-    }
-
-    stream.withCloseable { iStream ->
-      new BufferedReader(new InputStreamReader(iStream))
-          .lines().collect(Collectors.joining("\n"))
-    }
   }
 
 

@@ -61,9 +61,12 @@ public class TransactionEndpoint {
           BigDecimal amount = new BigDecimal(request.params(":amount"));
 
           Account fromAccount = accountStorage.get(from);
-          if (fromAccount.amount.compareTo(amount) < 0) {
+          BigDecimal checkedAmount = fromAccount.amount;
+          if (checkedAmount.compareTo(amount) < 0) {
             response.status(424);
-            return new Error(request.pathInfo(), 424, "Account with id " + from + " don't have enough balance to open transaction");
+            return new Error(request.pathInfo(), 424,
+                "Account with id " + from + " balance to low [need=" + amount + "; have="
+                    + checkedAmount + "]");
           }
 
           Transaction transaction;
@@ -83,7 +86,7 @@ public class TransactionEndpoint {
           response.header("Link", "/api/1.0/transaction/" + transaction.id);
           return response;
 
-        });
+        }, transformer);
   }
 
   private Transaction createTransaction(long from, long to, BigDecimal amount) {
