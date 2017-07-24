@@ -19,3 +19,14 @@ dependencies {
     testCompile 'org.codehaus.groovy:groovy-all:2.4.12'
     testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
 }
+
+task releaseJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Rest payment endpoint',
+            'Implementation-Version': version,
+            'Main-Class': 'ru.latuhin.payments.rest.endpoint.App'
+    }
+    baseName = project.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}

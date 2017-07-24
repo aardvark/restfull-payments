@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.latuhin.payments.rest.endpoint.serializers.SerializableResource;
 
 /**
@@ -23,6 +25,7 @@ import ru.latuhin.payments.rest.endpoint.serializers.SerializableResource;
  */
 
 public class Account implements SerializableResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Account.class);
 
   public final long id;
   public final LinkResource user;
@@ -59,7 +62,7 @@ public class Account implements SerializableResource {
       gen.writeNumberField("amount", this.amount.doubleValue());
       gen.writeEndObject();
     } catch (IOException e) {
-      e.printStackTrace();
+      LOGGER.error("Unable to serialize " + getClass() + " due to:", e);
     }
   }
 

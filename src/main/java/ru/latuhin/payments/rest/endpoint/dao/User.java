@@ -2,6 +2,8 @@ package ru.latuhin.payments.rest.endpoint.dao;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.latuhin.payments.rest.endpoint.serializers.SerializableResource;
 
 /**
@@ -19,6 +21,7 @@ import ru.latuhin.payments.rest.endpoint.serializers.SerializableResource;
  * }</pre>
  */
 public class User implements SerializableResource {
+  private static final Logger LOGGER = LoggerFactory.getLogger(User.class);
 
   public final long id;
   public final LinkCollection accounts;
@@ -40,7 +43,7 @@ public class User implements SerializableResource {
       gen.writeObjectField("transactions", this.transactions);
       gen.writeEndObject();
     } catch (IOException e) {
-      e.printStackTrace();
+      LOGGER.error("Unable to serialize " + getClass() + " due to:", e);
     }
   }
 }

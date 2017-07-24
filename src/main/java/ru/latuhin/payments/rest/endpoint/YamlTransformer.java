@@ -20,9 +20,11 @@ import ru.latuhin.payments.rest.endpoint.serializers.AccountDeserializer;
 import ru.latuhin.payments.rest.endpoint.serializers.ErrorDeserializer;
 import ru.latuhin.payments.rest.endpoint.serializers.ResourceSerializer;
 import ru.latuhin.payments.rest.endpoint.serializers.TransactionDeserializer;
+import spark.Response;
 import spark.ResponseTransformer;
 
 public class YamlTransformer implements ResponseTransformer {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(YamlTransformer.class);
 
   private final ObjectMapper mapper;
@@ -47,14 +49,14 @@ public class YamlTransformer implements ResponseTransformer {
       try {
         return mapper.readValue(yaml, new TypeReference<List<Transaction>>(){});
       } catch (IOException e) {
-        e.printStackTrace();
+        LOGGER.error("Unable to transform yaml to resource (" + clz + "): " + yaml, e);
       }
     }
 
     try {
       return objectReader.readValue(yaml);
     } catch (IOException e) {
-      LOGGER.error("Unable to transform yaml to resource (" + clz +"): "+ yaml, e);
+      LOGGER.error("Unable to transform yaml to resource (" + clz + "): " + yaml, e);
     }
     return null;
   }
@@ -64,12 +66,17 @@ public class YamlTransformer implements ResponseTransformer {
     if (model == null) {
       return null;
     }
+
+    if (model instanceof Response) {
+      return "";
+    }
+
     ObjectWriter objectWriter = mapper.writerFor(model.getClass());
     StringWriter w = new StringWriter();
     try {
       objectWriter.writeValue(w, model);
     } catch (IOException e) {
-      e.printStackTrace();
+      LOGGER.error("Unable to render response model due to:", e);
     }
     return w.getBuffer().toString();
   }

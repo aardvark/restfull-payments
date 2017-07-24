@@ -76,6 +76,8 @@ class TransactionsRestTest extends Specification {
 
     expect:
     conns.collect { it.responseCode } == [200, 200]
+    def bodys = conns.collect { it -> EndpointHelpers.grabBody(it) }
+
     conns.collect {
       it.getHeaderField("Link")
     } == ["/api/1.0/transaction/1", "/api/1.0/transaction/2"]
