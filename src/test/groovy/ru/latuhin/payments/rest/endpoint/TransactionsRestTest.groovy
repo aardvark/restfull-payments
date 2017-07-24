@@ -22,7 +22,7 @@ class TransactionsRestTest extends Specification {
     app.setStorage(storage, [:])
     App.main(null)
     def connection = new URL(
-        "http://$endpoint/api/1.0/transaction/$id"
+        "http://$endpoint/api/1.0/transactions/$id"
     ).openConnection() as HttpURLConnection
 
     expect:
@@ -42,13 +42,13 @@ class TransactionsRestTest extends Specification {
     App.main(null)
 
     def connection = new URL(
-        "http://$endpoint/api/1.0/transaction/$id"
+        "http://$endpoint/api/1.0/transactions/$id"
     ).openConnection() as HttpURLConnection
 
     expect:
     connection.responseCode == 404
     transformer.toResource(Error.class, EndpointHelpers.grabBody(connection)) == new Error(
-       request: "/api/1.0/transaction/$id",
+       request: "/api/1.0/transactions/$id",
        errorCode: connection.responseCode,
        message: "Transaction with id $id not found"
     )
@@ -66,7 +66,7 @@ class TransactionsRestTest extends Specification {
     List<HttpURLConnection> conns = []
     2.times {
       def url = new URL(
-          "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+          "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
       )
       def connection = url.openConnection() as HttpURLConnection
       connection.setRequestMethod("POST")
@@ -98,7 +98,7 @@ class TransactionsRestTest extends Specification {
     List<HttpURLConnection> conns = []
     numberOfTransaction.times {
       def url = new URL(
-          "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+          "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
       )
       def connection = url.openConnection() as HttpURLConnection
       connection.setRequestMethod("POST")
@@ -123,7 +123,7 @@ class TransactionsRestTest extends Specification {
 
     when:
     def url = new URL(
-        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+        "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )
     def connection = url.openConnection() as HttpURLConnection
     connection.setRequestMethod("POST")
@@ -150,7 +150,7 @@ class TransactionsRestTest extends Specification {
     app.setStorage(storage, accounts)
     App.main(null)
     def url = new URL(
-        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+        "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )
     def connection = url.openConnection() as HttpURLConnection
     connection.setRequestMethod("POST")
@@ -161,7 +161,7 @@ class TransactionsRestTest extends Specification {
 
     def bodyError = transformer.toResource(Error.class, EndpointHelpers.grabBody(connection))
     with (bodyError) {
-      request == "/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+      request == "/api/1.0/transactions/from/$from/to/$to/amount/$amount"
       errorCode == connection.responseCode
       message == "Account with id $from balance to low [need=$amount; have=0]"
 
@@ -179,7 +179,7 @@ class TransactionsRestTest extends Specification {
     app.setStorage(storage, accounts)
     App.main(null)
     def url = new URL(
-        "http://$endpoint/api/1.0/transaction/from/$from/to/$to/amount/$amount"
+        "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )
     def connection = url.openConnection() as HttpURLConnection
     connection.setRequestMethod("POST")

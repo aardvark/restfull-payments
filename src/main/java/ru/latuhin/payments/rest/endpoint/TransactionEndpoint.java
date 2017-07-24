@@ -8,7 +8,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
 import ru.latuhin.payments.rest.endpoint.dao.Error;
 import ru.latuhin.payments.rest.endpoint.dao.Transaction;
-import spark.Spark;
+import spark.Route;
 
 public class TransactionEndpoint {
 
@@ -27,66 +27,62 @@ public class TransactionEndpoint {
     this.accountStorage = accountStorage;
   }
 
-  public void get() {
-    transformer = new YamlTransformer();
-    Spark.get("/api/1.0/transaction/:id", "application/yaml",
-        (req, res) -> {
-          long id = getLongParam(req.params(":id"));
-          Transaction transaction = transactionStorage.get(id);
-          if (transaction == null) {
-            res.status(404);
-            return new Error(req.pathInfo(), 404, "Transaction with id " + id + " not found");
-          }
-          return transaction;
-        },
-        transformer);
+  public Route findById() {
+    return (req, res) -> {
+      long id = getLongParam(req.params(":id"));
+      Transaction transaction = transactionStorage.get(id);
+      if (transaction == null) {
+        res.status(404);
+        return new Error(req.pathInfo(), 404, "Transaction with id " + id + " not found");
+      }
+      return transaction;
+    };
   }
 
-  public void post() {
-    Spark.post("/api/1.0/transaction/from/:from/to/:to/amount/:amount", "text/plain",
-        (request, response) -> {
-          long from = getLongParam(request.params(":from"));
+  public Route createTransaction() {
+    return (request, response) -> {
+      long from = getLongParam(request.params(":from"));
 
-          if (!accountStorage.containsKey(from)) {
-            response.status(404);
-            return new Error(request.pathInfo(), 404, "Account with id " + from + " not found");
-          }
+      if (!accountStorage.containsKey(from)) {
+        response.status(404);
+        return new Error(request.pathInfo(), 404, "Account with id " + from + " not found");
+      }
 
-          long to = getLongParam(request.params(":to"));
-          if (!accountStorage.containsKey(to)) {
-            response.status(404);
-            return new Error(request.pathInfo(), 404, "Account with id " + to + " not found");
-          }
+      long to = getLongParam(request.params(":to"));
+      if (!accountStorage.containsKey(to)) {
+        response.status(404);
+        return new Error(request.pathInfo(), 404, "Account with id " + to + " not found");
+      }
 
-          BigDecimal amount = new BigDecimal(request.params(":amount"));
+      BigDecimal amount = new BigDecimal(request.params(":amount"));
 
-          Account fromAccount = accountStorage.get(from);
-          BigDecimal checkedAmount = fromAccount.amount;
-          if (checkedAmount.compareTo(amount) < 0) {
-            response.status(424);
-            return new Error(request.pathInfo(), 424,
-                "Account with id " + from + " balance to low [need=" + amount + "; have="
-                    + checkedAmount + "]");
-          }
+      Account fromAccount = accountStorage.get(from);
+      BigDecimal checkedAmount = fromAccount.amount;
+      if (checkedAmount.compareTo(amount) < 0) {
+        response.status(424);
+        return new Error(request.pathInfo(), 424,
+            "Account with id " + from + " balance to low [need=" + amount + "; have="
+                + checkedAmount + "]");
+      }
 
-          Transaction transaction;
-          try {
-            accountWrite.lock();
-            try {
-              transactionWrite.lock();
-              transaction = createTransaction(from, to, amount);
-            } finally {
-              transactionWrite.unlock();
-            }
-            accountStorage.compute(from, (aLong, account) -> new Account(account, amount));
-          } finally {
-            accountWrite.unlock();
-          }
+      Transaction transaction;
+      try {
+        accountWrite.lock();
+        try {
+          transactionWrite.lock();
+          transaction = createTransaction(from, to, amount);
+        } finally {
+          transactionWrite.unlock();
+        }
+        accountStorage.compute(from, (aLong, account) -> new Account(account, amount));
+      } finally {
+        accountWrite.unlock();
+      }
 
-          response.header("Link", "/api/1.0/transaction/" + transaction.id);
-          return response;
+      response.header("Link", "/api/1.0/transaction/" + transaction.id);
+      return response;
 
-        }, transformer);
+    };
   }
 
   private Transaction createTransaction(long from, long to, BigDecimal amount) {
