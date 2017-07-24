@@ -16,4 +16,10 @@ class EndpointHelpers {
           .lines().collect(Collectors.joining("\n"))
     }
   }
+
+  static void setupApi(NavigableMap transactionStorage, Map accountStorage) {
+    def app = new App()
+    app.setStorage(transactionStorage, accountStorage)
+    app.setup()
+  }
 }

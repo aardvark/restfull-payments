@@ -9,6 +9,8 @@ import spock.lang.Unroll
 
 import java.util.stream.Collectors
 
+import static ru.latuhin.payments.rest.endpoint.EndpointHelpers.setupApi
+
 class TransactionsRestTest extends Specification {
   String endpoint = 'localhost:4567'
   def transformer = new YamlTransformer()
@@ -18,9 +20,8 @@ class TransactionsRestTest extends Specification {
     long id = 1
     def storage = new TreeMap()
     storage[id] = new Transaction(1l, 4l, 5l, 22.1, Status.Open)
-    def app = new App()
-    app.setStorage(storage, [:])
-    App.main(null)
+    setupApi(storage, [:])
+
     def connection = new URL(
         "http://$endpoint/api/1.0/transactions/$id"
     ).openConnection() as HttpURLConnection
@@ -37,9 +38,7 @@ class TransactionsRestTest extends Specification {
     given:
     long id = 1
     def storage = new TreeMap()
-    def app = new App()
-    app.setStorage(storage, [:])
-    App.main(null)
+    setupApi(storage, [:])
 
     def connection = new URL(
         "http://$endpoint/api/1.0/transactions/$id"
@@ -59,10 +58,8 @@ class TransactionsRestTest extends Specification {
     long to = 3
     def amount = 22.2
     def storage = new TreeMap<>()
-    def app = new App()
     def accounts = [(from): new Account(from, 0, new BigDecimal(100)), (to): new Account(to, 0)]
-    app.setStorage(storage, accounts)
-    App.main(null)
+    setupApi(storage, accounts)
     List<HttpURLConnection> conns = []
     2.times {
       def url = new URL(
@@ -90,11 +87,9 @@ class TransactionsRestTest extends Specification {
     def numberOfTransaction = 100
     def amount = 10
     def storage = new TreeMap<>()
-    def app = new App()
     def accounts = [(from): new Account(from, 0, new BigDecimal(numberOfTransaction * amount)), (to):
         new Account(to, 0)]
-    app.setStorage(storage, accounts)
-    App.main(null)
+    setupApi(storage, accounts)
     List<HttpURLConnection> conns = []
     numberOfTransaction.times {
       def url = new URL(
@@ -117,9 +112,7 @@ class TransactionsRestTest extends Specification {
     given:
     def amount = 22.2
     def storage = new TreeMap<>()
-    def app = new App()
-    app.setStorage(storage, accounts)
-    App.main(null)
+    setupApi(storage, accounts)
 
     when:
     def url = new URL(
@@ -145,10 +138,8 @@ class TransactionsRestTest extends Specification {
     long to = 2
     def amount = 22.2
     def storage = new TreeMap<>()
-    def app = new App()
     def accounts = [(from): new Account(from, 0), (to): new Account(to, 0)]
-    app.setStorage(storage, accounts)
-    App.main(null)
+    setupApi(storage, accounts)
     def url = new URL(
         "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )
@@ -173,11 +164,9 @@ class TransactionsRestTest extends Specification {
     long to = 2
     def amount = 42.0
     def storage = new TreeMap<>()
-    def app = new App()
     def fromStaringAmount = new BigDecimal(100)
     def accounts = [(from): new Account(from, 0, fromStaringAmount), (to): new Account(to, 0)]
-    app.setStorage(storage, accounts)
-    App.main(null)
+    setupApi(storage, accounts)
     def url = new URL(
         "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )

@@ -5,6 +5,8 @@ import ru.latuhin.payments.rest.endpoint.dao.Error
 import ru.latuhin.payments.rest.endpoint.dao.Transaction
 import spock.lang.Specification
 
+import static ru.latuhin.payments.rest.endpoint.EndpointHelpers.setupApi
+
 class AccountsRestTest extends Specification {
   String endpoint = 'localhost:4567'
   YamlTransformer transformer = new YamlTransformer()
@@ -15,9 +17,7 @@ class AccountsRestTest extends Specification {
     long userId = 1
     def accounts = new HashMap()
     accounts[id] = new Account(id, userId)
-    def app = new App()
-    app.setStorage([:] as NavigableMap, accounts)
-    App.main(null)
+    setupApi(new TreeMap(), accounts)
     def connection = new URL(
         "http://$endpoint/api/1.0/accounts/$id"
     ).openConnection() as HttpURLConnection
@@ -34,9 +34,7 @@ class AccountsRestTest extends Specification {
     long userId = 1
     def accounts = new HashMap()
     accounts[id] = new Account(id, userId)
-    def app = new App()
-    app.setStorage([:] as NavigableMap, accounts)
-    App.main(null)
+    setupApi(new TreeMap(), accounts)
     def connection = new URL(
         "http://$endpoint/api/1.0/accounts/-1"
     ).openConnection() as HttpURLConnection
@@ -63,9 +61,7 @@ class AccountsRestTest extends Specification {
     def transactionStorage = new TreeMap()
     transactionStorage[1L] = new Transaction(1L, fromAccount, toAccount, 0.0)
 
-    def app = new App()
-    app.setStorage(transactionStorage, accountStorage)
-    App.main(null)
+    setupApi(transactionStorage, accountStorage)
     def connection = new URL(
         "http://$endpoint/api/1.0/accounts/1/transactions"
     ).openConnection() as HttpURLConnection
@@ -80,4 +76,6 @@ class AccountsRestTest extends Specification {
       to.id == toAccount
     }
   }
+
+
 }

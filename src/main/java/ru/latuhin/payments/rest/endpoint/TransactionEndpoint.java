@@ -8,6 +8,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
 import ru.latuhin.payments.rest.endpoint.dao.Error;
 import ru.latuhin.payments.rest.endpoint.dao.Transaction;
+import ru.latuhin.payments.rest.endpoint.serializers.SerializableResource;
+import spark.Request;
+import spark.Response;
 import spark.Route;
 
 public class TransactionEndpoint {
@@ -39,50 +42,47 @@ public class TransactionEndpoint {
     };
   }
 
-  public Route createTransaction() {
-    return (request, response) -> {
-      long from = getLongParam(request.params(":from"));
+  public SerializableResource createTransaction(Request request, Response response) {
+    long from = getLongParam(request.params(":from"));
 
-      if (!accountStorage.containsKey(from)) {
-        response.status(404);
-        return new Error(request.pathInfo(), 404, "Account with id " + from + " not found");
-      }
+    if (!accountStorage.containsKey(from)) {
+      response.status(404);
+      return new Error(request.pathInfo(), 404, "Account with id " + from + " not found");
+    }
 
-      long to = getLongParam(request.params(":to"));
-      if (!accountStorage.containsKey(to)) {
-        response.status(404);
-        return new Error(request.pathInfo(), 404, "Account with id " + to + " not found");
-      }
+    long to = getLongParam(request.params(":to"));
+    if (!accountStorage.containsKey(to)) {
+      response.status(404);
+      return new Error(request.pathInfo(), 404, "Account with id " + to + " not found");
+    }
 
-      BigDecimal amount = new BigDecimal(request.params(":amount"));
+    BigDecimal amount = new BigDecimal(request.params(":amount"));
 
-      Account fromAccount = accountStorage.get(from);
-      BigDecimal checkedAmount = fromAccount.amount;
-      if (checkedAmount.compareTo(amount) < 0) {
-        response.status(424);
-        return new Error(request.pathInfo(), 424,
-            "Account with id " + from + " balance to low [need=" + amount + "; have="
-                + checkedAmount + "]");
-      }
+    Account fromAccount = accountStorage.get(from);
+    BigDecimal checkedAmount = fromAccount.amount;
+    if (checkedAmount.compareTo(amount) < 0) {
+      response.status(424);
+      return new Error(request.pathInfo(), 424,
+          "Account with id " + from + " balance to low [need=" + amount + "; have="
+              + checkedAmount + "]");
+    }
 
-      Transaction transaction;
+    Transaction transaction;
+    try {
+      accountWrite.lock();
       try {
-        accountWrite.lock();
-        try {
-          transactionWrite.lock();
-          transaction = createTransaction(from, to, amount);
-        } finally {
-          transactionWrite.unlock();
-        }
-        accountStorage.compute(from, (aLong, account) -> new Account(account, amount));
+        transactionWrite.lock();
+        transaction = createTransaction(from, to, amount);
       } finally {
-        accountWrite.unlock();
+        transactionWrite.unlock();
       }
+      accountStorage.compute(from, (aLong, account) -> new Account(account, amount));
+    } finally {
+      accountWrite.unlock();
+    }
 
-      response.header("Link", "/api/1.0/transaction/" + transaction.id);
-      return response;
-
-    };
+    response.header("Link", "/api/1.0/transaction/" + transaction.id);
+    return transactionStorage.get(transaction.id);
   }
 
   private Transaction createTransaction(long from, long to, BigDecimal amount) {
