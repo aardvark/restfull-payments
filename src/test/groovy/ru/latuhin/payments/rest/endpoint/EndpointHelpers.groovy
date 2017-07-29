@@ -17,9 +17,16 @@ class EndpointHelpers {
     }
   }
 
+  @Deprecated
   static void setupApi(NavigableMap transactionStorage, Map accountStorage) {
     def app = new App()
-    app.setStorage(transactionStorage, accountStorage)
+    app.setStorage(transactionStorage, accountStorage, new HashMap<>())
+    app.setup()
+  }
+
+  static void setupApi(NavigableMap transactionStorage, Map accountStorage, Map userStorage) {
+    def app = new App()
+    app.setStorage(transactionStorage, accountStorage, userStorage)
     app.setup()
   }
 }

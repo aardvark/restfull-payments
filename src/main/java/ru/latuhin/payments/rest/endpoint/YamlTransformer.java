@@ -1,13 +1,10 @@
 package ru.latuhin.payments.rest.endpoint;
 
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectReader;
-import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -20,6 +17,7 @@ import ru.latuhin.payments.rest.endpoint.serializers.AccountDeserializer;
 import ru.latuhin.payments.rest.endpoint.serializers.ErrorDeserializer;
 import ru.latuhin.payments.rest.endpoint.serializers.ResourceSerializer;
 import ru.latuhin.payments.rest.endpoint.serializers.TransactionDeserializer;
+import ru.latuhin.payments.rest.endpoint.serializers.UserDeserializer;
 import spark.Response;
 import spark.ResponseTransformer;
 
@@ -40,21 +38,17 @@ public class YamlTransformer implements ResponseTransformer {
     resources.addDeserializer(Transaction.class, new TransactionDeserializer());
     resources.addDeserializer(Account.class, new AccountDeserializer());
     resources.addDeserializer(Error.class, new ErrorDeserializer());
+    resources.addDeserializer(User.class, new UserDeserializer());
     mapper.registerModule(resources);
   }
 
   public <T> T toResource(Class<T> clz, String yaml) {
-    ObjectReader objectReader = mapper.readerFor(clz);
-    if (clz == List.class) {
-      try {
-        return mapper.readValue(yaml, new TypeReference<List<Transaction>>(){});
-      } catch (IOException e) {
-        LOGGER.error("Unable to transform yaml to resource (" + clz + "): " + yaml, e);
-      }
-    }
-
     try {
-      return objectReader.readValue(yaml);
+      JsonNode node = mapper.readTree(yaml);
+      if (node.isArray()) {
+        return mapper.readValue(yaml, mapper.getTypeFactory().constructCollectionType(List.class, clz));
+      }
+      return mapper.readValue(yaml, clz);
     } catch (IOException e) {
       LOGGER.error("Unable to transform yaml to resource (" + clz + "): " + yaml, e);
     }
@@ -71,13 +65,11 @@ public class YamlTransformer implements ResponseTransformer {
       return "";
     }
 
-    ObjectWriter objectWriter = mapper.writerFor(model.getClass());
-    StringWriter w = new StringWriter();
     try {
-      objectWriter.writeValue(w, model);
+      return mapper.writeValueAsString(model);
     } catch (IOException e) {
       LOGGER.error("Unable to render response model due to:", e);
     }
-    return w.getBuffer().toString();
+    return null;
   }
 }

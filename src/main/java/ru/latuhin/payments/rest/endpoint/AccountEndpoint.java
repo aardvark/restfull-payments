@@ -5,6 +5,8 @@ import static java.util.stream.Collectors.toList;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Set;
+import java.util.stream.Collectors;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
 import ru.latuhin.payments.rest.endpoint.dao.Error;
 import ru.latuhin.payments.rest.endpoint.dao.Transaction;
@@ -29,6 +31,15 @@ public class AccountEndpoint {
 
   public List<Transaction> getTransactions(Request request, Response response) {
     long accountId = getLongParam(request.params(":id"));
+    return getTransactionsByAccountId(accountId);
+  }
+
+  public List<Transaction> getTransactions(Set<Long> accountIds) {
+    return transactionStorage.values().stream()
+        .filter(transaction -> transaction.matchAccount(accountIds)).collect(toList());
+  }
+
+  public List<Transaction> getTransactionsByAccountId(long accountId) {
     return transactionStorage.values().stream()
         .filter(transaction -> transaction.matchAccount(accountId)).collect(toList());
   }
@@ -43,8 +54,13 @@ public class AccountEndpoint {
     return account;
   }
 
+  public List<Account> findByUserId(Request req, Response res) {
+    long id = getLongParam(req.params(":id"));
+    return storage.values().stream().filter(account -> account.matchByUser(id)).collect(
+        Collectors.toList());
+  }
+
   private long getLongParam(String params) {
     return Long.parseLong(params);
   }
-
 }

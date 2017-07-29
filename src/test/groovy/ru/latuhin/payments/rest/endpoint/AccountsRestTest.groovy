@@ -69,7 +69,7 @@ class AccountsRestTest extends Specification {
     expect:
     connection.responseCode == 200
     def body = EndpointHelpers.grabBody(connection)
-    List<Transaction> transactions = transformer.toResource(List.class, body)
+    List<Transaction> transactions = transformer.toResource(Transaction.class, body)
     with (transactions[0]) {
       it.class == Transaction.class
       from.id == fromAccount

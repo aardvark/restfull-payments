@@ -58,7 +58,7 @@ amount: 10.5
   amount: 0.0
 '''
     def transformer = new YamlTransformer()
-    def list = transformer.toResource(List.class, yaml)
+    def list = transformer.toResource(Transaction.class, yaml)
 
     expect:
     list.size() == 2

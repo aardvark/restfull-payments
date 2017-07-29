@@ -101,5 +101,4 @@ public class TransactionEndpoint {
   private long getLongParam(String params) {
     return Long.parseLong(params);
   }
-
 }

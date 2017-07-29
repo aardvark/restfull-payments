@@ -93,4 +93,8 @@ public class Account implements SerializableResource {
         ", amount=" + amount +
         '}';
   }
+
+  public boolean matchByUser(long id) {
+    return this.user.id == id;
+  }
 }
