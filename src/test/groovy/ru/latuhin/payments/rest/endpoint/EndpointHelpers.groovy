@@ -24,9 +24,14 @@ class EndpointHelpers {
     app.setup()
   }
 
-  static void setupApi(NavigableMap transactionStorage, Map accountStorage, Map userStorage) {
+  static App setupApi(NavigableMap transactionStorage, Map accountStorage, Map userStorage) {
     def app = new App()
     app.setStorage(transactionStorage, accountStorage, userStorage)
     app.setup()
+    return app
+  }
+
+  public static HttpURLConnection get(String url) {
+    new URL(url).openConnection() as HttpURLConnection
   }
 }

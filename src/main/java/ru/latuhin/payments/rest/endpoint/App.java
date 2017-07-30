@@ -11,8 +11,13 @@ import java.util.NavigableMap;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
 import ru.latuhin.payments.rest.endpoint.dao.Transaction;
 import ru.latuhin.payments.rest.endpoint.dao.User;
+import spark.Spark;
 
 public class App {
+  public App() {}
+  public App(int port) {
+    Spark.port(port);
+  }
 
   public static final YamlTransformer yamlTransformer = new YamlTransformer();
   public static TransactionEndpoint transactionEndpoint;
@@ -24,6 +29,8 @@ public class App {
   }
 
   private void declareRoutes() {
+    get("/hearthbeat", (request, response) -> "live");
+
     path("/api/1.0", () -> {
       get("/transactions/:id", "application/yaml",
           transactionEndpoint.findById(),
@@ -68,5 +75,9 @@ public class App {
     } else {
       userEndpoint.storage = userStorage;
     }
+  }
+
+  public void stop() {
+    Spark.stop();
   }
 }

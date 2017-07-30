@@ -22,7 +22,7 @@ class UsersRestTest extends Specification {
     setupApi(new TreeMap(), [:], [22l: new User(22l)])
 
     when:
-    def connection = get(url)
+    def connection = EndpointHelpers.get(url)
 
     then:
     connection.responseCode == 200
@@ -44,7 +44,7 @@ class UsersRestTest extends Specification {
     setupApi(new TreeMap(), [:], userStorage)
 
     when:
-    def connection = get(url)
+    def connection = EndpointHelpers.get(url)
     User user = transformer.toResource(User.class, grabBody(connection))
 
     then:
@@ -59,7 +59,7 @@ class UsersRestTest extends Specification {
     setupApi(new TreeMap(), [:], userStorage)
 
     when:
-    def connection = get(url)
+    def connection = EndpointHelpers.get(url)
 
     then:
     connection.responseCode == 404
@@ -67,9 +67,6 @@ class UsersRestTest extends Specification {
     error.message == 'User with id 22 not found'
   }
 
-  private static HttpURLConnection get(GString url) {
-    new URL(url).openConnection() as HttpURLConnection
-  }
 
   def "returned accounts should match one stored in the storage"() {
     given:
@@ -81,7 +78,7 @@ class UsersRestTest extends Specification {
     def url = "http://$endpoint/api/1.0/users/22/accounts"
 
     when:
-    def connection = get(url)
+    def connection = EndpointHelpers.get(url)
     List<Account> accounts = transformer.toResource(Account.class, grabBody(connection))
 
     then:
@@ -109,7 +106,7 @@ class UsersRestTest extends Specification {
     setupApi(transactionStorage, accountStorage, userStorage)
 
     when:
-    def connection = get(url)
+    def connection = EndpointHelpers.get(url)
     List<Transaction> transactions = transformer.toResource(Transaction.class, grabBody(connection))
 
     then:
