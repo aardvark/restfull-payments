@@ -1,6 +1,9 @@
 package ru.latuhin.payments.rest.endpoint;
 
 import static java.util.stream.Collectors.toSet;
+import static spark.Spark.get;
+import static spark.Spark.path;
+import static spark.Spark.post;
 
 import java.util.List;
 import java.util.Map;
@@ -8,18 +11,12 @@ import java.util.NavigableMap;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
 import ru.latuhin.payments.rest.endpoint.dao.Transaction;
 import ru.latuhin.payments.rest.endpoint.dao.User;
-import spark.Service;
+import spark.Spark;
 
 public class App {
-
-  private final Service service;
-
-  public App() {
-    service = Service.ignite();
-  }
+  public App() {}
   public App(int port) {
-    service = Service.ignite();
-    service.port(port);
+    Spark.port(port);
   }
 
   public static final YamlTransformer yamlTransformer = new YamlTransformer();
@@ -32,23 +29,23 @@ public class App {
   }
 
   private void declareRoutes() {
-    service.get("/hearthbeat", (request, response) -> "live");
+    get("/hearthbeat", (request, response) -> "live");
 
-    service.path("/api/1.0", () -> {
-      service.get("/transactions/:id", "application/yaml",
+    path("/api/1.0", () -> {
+      get("/transactions/:id", "application/yaml",
           transactionEndpoint.findById(),
           yamlTransformer);
-      service.post("/transactions/from/:from/to/:to/amount/:amount", "text/plain",
+      post("/transactions/from/:from/to/:to/amount/:amount", "text/plain",
           transactionEndpoint::createTransaction, yamlTransformer);
 
-      service.get("/accounts/:id", "application/yaml", accountEndpoint::findAccount, yamlTransformer);
-      service.get("/accounts/:id/transactions", "application/yaml", accountEndpoint::getTransactions,
+      get("/accounts/:id", "application/yaml", accountEndpoint::findAccount, yamlTransformer);
+      get("/accounts/:id/transactions", "application/yaml", accountEndpoint::getTransactions,
           yamlTransformer);
 
-      service.get("/users/:id", "application/yaml", userEndpoint::findUser, yamlTransformer);
-      service.get("/users/:id/accounts", "application/yaml", accountEndpoint::findByUserId,
+      get("/users/:id", "application/yaml", userEndpoint::findUser, yamlTransformer);
+      get("/users/:id/accounts", "application/yaml", accountEndpoint::findByUserId,
           yamlTransformer);
-      service.get("/users/:id/transactions", "application/yaml", ((request, response) -> {
+      get("/users/:id/transactions", "application/yaml", ((request, response) -> {
             List<Account> accounts = accountEndpoint.findByUserId(request, response);
             return accountEndpoint.getTransactions(
                 accounts.stream().map(account -> account.id).collect(toSet()));
@@ -81,6 +78,6 @@ public class App {
   }
 
   public void stop() {
-    service.stop();
+    Spark.stop();
   }
 }
