@@ -1,5 +1,6 @@
 package ru.latuhin.payments.rest.endpoint
 
+import org.eclipse.jetty.http.HttpHeader
 import ru.latuhin.payments.rest.endpoint.dao.Account
 import ru.latuhin.payments.rest.endpoint.dao.Error
 import ru.latuhin.payments.rest.endpoint.dao.Transaction
@@ -19,7 +20,11 @@ class UsersRestTest extends Specification {
 
   def "GET request should resolve for #url"() {
     given:
-    setupApi(new TreeMap(), [:], [22l: new User(22l)])
+    setupApi(
+        [(1l): new Transaction(1l, 1l, 1l, new BigDecimal(1000.0))],
+        [(1l): new Account(1l, 22l)],
+        [22l: new User(22l)]
+    )
 
     when:
     def connection = EndpointHelpers.get(url)
@@ -27,12 +32,12 @@ class UsersRestTest extends Specification {
     then:
     connection.responseCode == 200
     def resource = transformer.toResource(clz, grabBody(connection))
-    resource.class == clz
+    resource[0].class == clz
     where:
     url                                              | clz
     "http://$endpoint/api/1.0/users/22"              | User.class
-    "http://$endpoint/api/1.0/users/22/accounts"     | ArrayList.class
-    "http://$endpoint/api/1.0/users/22/transactions" | ArrayList.class
+    "http://$endpoint/api/1.0/users/22/accounts"     | Account.class
+    "http://$endpoint/api/1.0/users/22/transactions" | Transaction.class
   }
 
   def "returned user should match one stored in the storage"() {
@@ -45,7 +50,7 @@ class UsersRestTest extends Specification {
 
     when:
     def connection = EndpointHelpers.get(url)
-    User user = transformer.toResource(User.class, grabBody(connection))
+    def user = transformer.toResource(User.class, grabBody(connection))[0]
 
     then:
     connection.responseCode == 200
@@ -63,7 +68,7 @@ class UsersRestTest extends Specification {
 
     then:
     connection.responseCode == 404
-    Error error = transformer.toResource(Error.class, grabBody(connection))
+    def error = transformer.toResource(Error.class, grabBody(connection))[0]
     error.message == 'User with id 22 not found'
   }
 
@@ -113,4 +118,58 @@ class UsersRestTest extends Specification {
     connection.responseCode == 200
     transactions.size() == 3
   }
+
+  def "user post should create new user, when no user exist"() {
+    given:
+    def newUserId = 42
+    def userString = { id -> "http://$endpoint/api/1.0/users/$id" }
+    def url = new URL(userString(newUserId))
+    setupApi(new TreeMap(), [:], [:])
+
+    when:
+    def connection = url.openConnection() as HttpURLConnection
+    connection.setRequestMethod("POST")
+    connection.setRequestProperty("Accept", "application/yaml")
+
+    then:
+    connection.responseCode == 201
+    connection.headerFields.get(HttpHeader.LOCATION.asString())[0] == userString(1)
+    def users = transformer.toResource(User.class, grabBody(connection))
+    users[0].id != newUserId
+    users[0].id == 1l
+  }
+
+  def "creating users in parallel should return valid user objects and headers"() {
+    given:
+    def usersMap = new TreeMap()
+    setupApi(new TreeMap(), [:], usersMap)
+
+    def cons = []
+
+    def numberOfIterations = 330
+    numberOfIterations.times {
+      def userString = { id -> "http://$endpoint/api/1.0/users/$id" }
+      def url = new URL(userString(1l))
+      def connection = url.openConnection() as HttpURLConnection
+      connection.setRequestMethod("POST")
+      connection.setRequestProperty("Accept", "application/yaml")
+      cons.add(connection)
+    }
+    def matchList = []
+    def codes = cons.parallelStream().map({ it ->
+      def location = it.headerFields.get(HttpHeader.LOCATION.asString())[0]
+      def userId = transformer.toResource(User.class, grabBody(it))[0].id
+      matchList.add(location.endsWith(userId.toString()))
+      return it.responseCode
+    }).collect()
+
+    expect:
+
+    usersMap.size() == numberOfIterations
+    codes.size() == numberOfIterations
+    codes.stream().filter({ it != 201 }).collect().isEmpty()
+    matchList.stream().filter( {it == false }).collect().isEmpty()
+
+  }
+
 }
