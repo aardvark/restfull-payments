@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -42,13 +43,18 @@ public class YamlTransformer implements ResponseTransformer {
     mapper.registerModule(resources);
   }
 
-  public <T> T toResource(Class<T> clz, String yaml) {
+  public <T> List<T> toResource(Class<T> clz, String yaml) {
     try {
       JsonNode node = mapper.readTree(yaml);
       if (node.isArray()) {
-        return mapper.readValue(yaml, mapper.getTypeFactory().constructCollectionType(List.class, clz));
+        List<T> list = mapper
+            .readValue(yaml, mapper.getTypeFactory().constructCollectionType(List.class, clz));
+        if (list.isEmpty()) {
+          return Collections.emptyList();
+        }
+        return list;
       }
-      return mapper.readValue(yaml, clz);
+      return Collections.singletonList(mapper.readValue(yaml, clz));
     } catch (IOException e) {
       LOGGER.error("Unable to transform yaml to resource (" + clz + "): " + yaml, e);
     }

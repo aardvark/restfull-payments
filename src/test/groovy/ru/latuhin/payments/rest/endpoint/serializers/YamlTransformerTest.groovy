@@ -8,7 +8,7 @@ class YamlTransformerTest extends Specification {
   def "ToResource"() {
     given:
     def transformer = new YamlTransformer()
-    Transaction transaction = transformer.toResource(Transaction.class, '''--- !<transaction>
+    def transaction = transformer.toResource(Transaction.class, '''--- !<transaction>
 id: 1
 href: "/api/transactions/1"
 from:
@@ -22,10 +22,12 @@ to:
 amount: 10.5
 ''')
     expect:
-    transaction.id == 1
-    transaction.from.id == 2
-    transaction.to.id == 3
-    transaction.amount == 10.5
+    with (transaction[0]) {
+      id == 1
+      from.id == 2
+      to.id == 3
+      amount == 10.5
+    }
 
   }
 

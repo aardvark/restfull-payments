@@ -20,7 +20,7 @@ class TransactionsRestTest extends Specification {
     long id = 1
     def storage = new TreeMap()
     storage[id] = new Transaction(1l, 4l, 5l, 22.1, Status.Open)
-    setupApi(storage, [:])
+    setupApi(storage, [:], [:])
 
     def connection = new URL(
         "http://$endpoint/api/1.0/transactions/$id"
@@ -30,7 +30,7 @@ class TransactionsRestTest extends Specification {
     connection.responseCode == 200
     def body = EndpointHelpers.grabBody(connection)
     def transaction = transformer.toResource(Transaction.class, body)
-    transaction == storage[1l]
+    transaction[0] == storage[1l]
   }
 
 
@@ -38,7 +38,7 @@ class TransactionsRestTest extends Specification {
     given:
     long id = 1
     def storage = new TreeMap()
-    setupApi(storage, [:])
+    setupApi(storage, [:], [:])
 
     def connection = new URL(
         "http://$endpoint/api/1.0/transactions/$id"
@@ -46,7 +46,7 @@ class TransactionsRestTest extends Specification {
 
     expect:
     connection.responseCode == 404
-    transformer.toResource(Error.class, EndpointHelpers.grabBody(connection)) == new Error(
+    transformer.toResource(Error.class, EndpointHelpers.grabBody(connection))[0] == new Error(
        request: "/api/1.0/transactions/$id",
        errorCode: connection.responseCode,
        message: "Transaction with id $id not found"
@@ -59,7 +59,7 @@ class TransactionsRestTest extends Specification {
     def amount = 22.2
     def storage = new TreeMap<>()
     def accounts = [(from): new Account(from, 0, new BigDecimal(100)), (to): new Account(to, 0)]
-    setupApi(storage, accounts)
+    setupApi(storage, accounts, new TreeMap())
     List<HttpURLConnection> conns = []
     2.times {
       def url = new URL(
@@ -73,8 +73,6 @@ class TransactionsRestTest extends Specification {
 
     expect:
     conns.collect { it.responseCode } == [200, 200]
-    def bodys = conns.collect { it -> EndpointHelpers.grabBody(it) }
-
     conns.collect {
       it.getHeaderField("Link")
     } == ["/api/1.0/transaction/1", "/api/1.0/transaction/2"]
@@ -89,7 +87,7 @@ class TransactionsRestTest extends Specification {
     def storage = new TreeMap<>()
     def accounts = [(from): new Account(from, 0, new BigDecimal(numberOfTransaction * amount)), (to):
         new Account(to, 0)]
-    setupApi(storage, accounts)
+    setupApi(storage, accounts, new TreeMap())
     List<HttpURLConnection> conns = []
     numberOfTransaction.times {
       def url = new URL(
@@ -100,7 +98,7 @@ class TransactionsRestTest extends Specification {
       connection.setRequestProperty("Accept", "text/plain")
       conns.add(connection)
     }
-    def codes = conns.parallelStream().map({ it -> it.responseCode }).collect(Collectors.toList())
+    conns.parallelStream().forEach({ it -> it.responseCode })
 
     expect:
     storage.size() == numberOfTransaction
@@ -112,7 +110,7 @@ class TransactionsRestTest extends Specification {
     given:
     def amount = 22.2
     def storage = new TreeMap<>()
-    setupApi(storage, accounts)
+    setupApi(storage, accounts, [:])
 
     when:
     def url = new URL(
@@ -139,7 +137,7 @@ class TransactionsRestTest extends Specification {
     def amount = 22.2
     def storage = new TreeMap<>()
     def accounts = [(from): new Account(from, 0), (to): new Account(to, 0)]
-    setupApi(storage, accounts)
+    setupApi(storage, accounts, [:])
     def url = new URL(
         "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )
@@ -151,7 +149,7 @@ class TransactionsRestTest extends Specification {
     connection.responseCode == 424
 
     def bodyError = transformer.toResource(Error.class, EndpointHelpers.grabBody(connection))
-    with (bodyError) {
+    with (bodyError[0]) {
       request == "/api/1.0/transactions/from/$from/to/$to/amount/$amount"
       errorCode == connection.responseCode
       message == "Account with id $from balance to low [need=$amount; have=0]"
@@ -166,7 +164,7 @@ class TransactionsRestTest extends Specification {
     def storage = new TreeMap<>()
     def fromStaringAmount = new BigDecimal(100)
     def accounts = [(from): new Account(from, 0, fromStaringAmount), (to): new Account(to, 0)]
-    setupApi(storage, accounts)
+    setupApi(storage, accounts, [:])
     def url = new URL(
         "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )

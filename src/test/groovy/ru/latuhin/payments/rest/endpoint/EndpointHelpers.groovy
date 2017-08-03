@@ -17,16 +17,16 @@ class EndpointHelpers {
     }
   }
 
-  @Deprecated
-  static void setupApi(NavigableMap transactionStorage, Map accountStorage) {
-    def app = new App()
-    app.setStorage(transactionStorage, accountStorage, new HashMap<>())
-    app.setup()
-  }
-
-  static App setupApi(NavigableMap transactionStorage, Map accountStorage, Map userStorage) {
+  static App setupApi(NavigableMap transactionStorage, Map accountStorage, NavigableMap userStorage) {
     def app = new App()
     app.setStorage(transactionStorage, accountStorage, userStorage)
+    app.setup()
+    return app
+  }
+
+  static App setupApi(Map transactionStorage, Map accountStorage, Map userStorage) {
+    def app = new App()
+    app.setStorage(new TreeMap(transactionStorage), accountStorage, new TreeMap(userStorage))
     app.setup()
     return app
   }

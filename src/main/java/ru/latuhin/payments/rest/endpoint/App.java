@@ -51,11 +51,12 @@ public class App {
                 accounts.stream().map(account -> account.id).collect(toSet()));
           }),
           yamlTransformer);
+      post("/users/:id", "application/yaml", userEndpoint::addUser, yamlTransformer);
     });
   }
 
   public void setStorage(NavigableMap<Long, Transaction> transactionStorage,
-      Map<Long, Account> accountStorage, Map<Long, User> userStorage) {
+      Map<Long, Account> accountStorage, NavigableMap<Long, User> userStorage) {
     if (transactionEndpoint == null) {
       transactionEndpoint = new TransactionEndpoint(transactionStorage, accountStorage, yamlTransformer);
     } else {

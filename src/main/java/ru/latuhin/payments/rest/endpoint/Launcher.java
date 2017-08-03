@@ -19,7 +19,7 @@ public class Launcher {
     if (args != null && args[0] != null && "bootstrap".equals(args[0])) {
       app.setStorage(new TreeMap<>(), bootstrap.createAccounts(), bootstrap.createUsers());
     } else {
-      app.setStorage(new TreeMap<>(), new HashMap<>(), new HashMap<>());
+      app.setStorage(new TreeMap<>(), new HashMap<>(), new TreeMap<>());
     }
     app.setup();
   }

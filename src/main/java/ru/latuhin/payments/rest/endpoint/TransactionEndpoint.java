@@ -92,8 +92,7 @@ public class TransactionEndpoint {
     } else {
       id = transactionStorage.lastKey() + 1;
     }
-    Transaction transaction;
-    transaction = new Transaction(id, from, to, amount);
+    Transaction transaction = new Transaction(id, from, to, amount);
     transactionStorage.put(transaction.id, transaction);
     return transaction;
   }

@@ -3,13 +3,15 @@ package ru.latuhin.payments.rest.endpoint;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
 import ru.latuhin.payments.rest.endpoint.dao.User;
 
 public class Bootstrap {
 
-  Map<Long, User> createUsers() {
-    Map<Long, User> users = new HashMap<>();
+  NavigableMap<Long, User> createUsers() {
+    NavigableMap<Long, User> users = new TreeMap<>();
     for (long i = 0; i < 10; i++) {
       users.put(i, new User(i));
     }
