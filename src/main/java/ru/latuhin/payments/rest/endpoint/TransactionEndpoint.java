@@ -59,18 +59,17 @@ public class TransactionEndpoint {
 
     BigDecimal amount = new BigDecimal(request.params(":amount"));
 
-    Account fromAccount = accountStorage.get(from);
-    BigDecimal checkedAmount = fromAccount.amount;
-    if (checkedAmount.compareTo(amount) < 0) {
-      response.status(424);
-      return new Error(request.pathInfo(), 424,
-          "Account with id " + from + " balance to low [need=" + amount + "; have="
-              + checkedAmount + "]");
-    }
-
     Transaction transaction;
     try {
       accountWrite.lock();
+      Account fromAccount = accountStorage.get(from);
+      BigDecimal checkedAmount = fromAccount.amount;
+      if (checkedAmount.compareTo(amount) < 0) {
+        response.status(424);
+        return new Error(request.pathInfo(), 424,
+            "Account with id " + from + " balance to low [need=" + amount + "; have="
+                + checkedAmount + "]");
+      }
       try {
         transactionWrite.lock();
         transaction = createTransaction(from, to, amount);
