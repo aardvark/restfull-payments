@@ -1,9 +1,9 @@
 package ru.latuhin.payments.rest.endpoint;
 
-import java.util.HashMap;
 import java.util.TreeMap;
 
 public class Launcher {
+
   public static Bootstrap bootstrap = new Bootstrap();
 
   public static void main(String[] args) {
