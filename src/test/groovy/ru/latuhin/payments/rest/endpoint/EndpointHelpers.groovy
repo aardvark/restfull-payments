@@ -17,16 +17,10 @@ class EndpointHelpers {
     }
   }
 
-  static App setupApi(NavigableMap transactionStorage, Map accountStorage, NavigableMap userStorage) {
+  static App setupApi(NavigableMap transactionStorage, NavigableMap accountStorage, NavigableMap
+      userStorage) {
     def app = new App()
     app.setStorage(transactionStorage, accountStorage, userStorage)
-    app.setup()
-    return app
-  }
-
-  static App setupApi(Map transactionStorage, Map accountStorage, Map userStorage) {
-    def app = new App()
-    app.setStorage(new TreeMap(transactionStorage), accountStorage, new TreeMap(userStorage))
     app.setup()
     return app
   }
@@ -34,4 +28,19 @@ class EndpointHelpers {
   public static HttpURLConnection get(String url) {
     new URL(url).openConnection() as HttpURLConnection
   }
+
+  static <T> List<T> runParallel(int numberOfTransaction, String urlString, Closure<T>
+      responseTransformer) {
+   List<HttpURLConnection> conns = []
+   numberOfTransaction.times {
+     def url = new URL(
+         urlString
+     )
+     def connection = url.openConnection() as HttpURLConnection
+     connection.setRequestMethod("POST")
+     connection.setRequestProperty("Accept", "application/yaml")
+     conns.add(connection)
+   }
+   conns.parallelStream().map(responseTransformer).collect(Collectors.toList())
+ }
 }

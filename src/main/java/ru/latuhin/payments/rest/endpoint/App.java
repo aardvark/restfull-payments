@@ -35,12 +35,16 @@ public class App {
       get("/transactions/:id", "application/yaml",
           transactionEndpoint.findById(),
           yamlTransformer);
-      post("/transactions/from/:from/to/:to/amount/:amount", "text/plain",
+      post("/transactions/from/:from/to/:to/amount/:amount", "application/yaml",
           transactionEndpoint::createTransaction, yamlTransformer);
+
 
       get("/accounts/:id", "application/yaml", accountEndpoint::findAccount, yamlTransformer);
       get("/accounts/:id/transactions", "application/yaml", accountEndpoint::getTransactions,
           yamlTransformer);
+      post("/accounts/:id/user/:userId", "application/yaml", accountEndpoint::createAccount,
+          yamlTransformer);
+
 
       get("/users/:id", "application/yaml", userEndpoint::findUser, yamlTransformer);
       get("/users/:id/accounts", "application/yaml", accountEndpoint::findByUserId,
@@ -49,14 +53,13 @@ public class App {
             List<Account> accounts = accountEndpoint.findByUserId(request, response);
             return accountEndpoint.getTransactions(
                 accounts.stream().map(account -> account.id).collect(toSet()));
-          }),
-          yamlTransformer);
+          }), yamlTransformer);
       post("/users/:id", "application/yaml", userEndpoint::addUser, yamlTransformer);
     });
   }
 
   public void setStorage(NavigableMap<Long, Transaction> transactionStorage,
-      Map<Long, Account> accountStorage, NavigableMap<Long, User> userStorage) {
+      NavigableMap<Long, Account> accountStorage, NavigableMap<Long, User> userStorage) {
     if (transactionEndpoint == null) {
       transactionEndpoint = new TransactionEndpoint(transactionStorage, accountStorage, yamlTransformer);
     } else {
@@ -65,10 +68,11 @@ public class App {
     }
 
     if (accountEndpoint == null) {
-      accountEndpoint = new AccountEndpoint(accountStorage, transactionStorage, yamlTransformer);
+      accountEndpoint = new AccountEndpoint(accountStorage, transactionStorage, userStorage, yamlTransformer);
     } else {
       accountEndpoint.storage = accountStorage;
       accountEndpoint.transactionStorage = transactionStorage;
+      accountEndpoint.userStorage = userStorage;
     }
 
     if (userEndpoint == null) {

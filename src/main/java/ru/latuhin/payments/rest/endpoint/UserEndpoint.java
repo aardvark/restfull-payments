@@ -44,7 +44,7 @@ public class UserEndpoint {
       usersWrite.unlock();
     }
     response.status(201);
-    response.header(HttpHeader.LOCATION.asString(), request.scheme() + "://" + request.host() + "/api/1.0/users/" + user.id);
+    response.header(HttpHeader.LOCATION.asString(),"/api/1.0/users/" + user.id);
     return user;
   }
 

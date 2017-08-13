@@ -18,8 +18,8 @@ public class Bootstrap {
     return users;
   }
 
-  Map<Long, Account> createAccounts() {
-    Map<Long, Account> accounts = new HashMap<>();
+  NavigableMap<Long, Account> createAccounts() {
+    NavigableMap<Long, Account> accounts = new TreeMap<>();
     long j = 0;
     for (int i = 0; i < 3; i++) {
       for (long k = 0; k < 10; k++) {

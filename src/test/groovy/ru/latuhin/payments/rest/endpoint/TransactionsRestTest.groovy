@@ -7,8 +7,6 @@ import ru.latuhin.payments.rest.endpoint.dao.Transaction
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import java.util.stream.Collectors
-
 import static ru.latuhin.payments.rest.endpoint.EndpointHelpers.setupApi
 
 class TransactionsRestTest extends Specification {
@@ -20,7 +18,7 @@ class TransactionsRestTest extends Specification {
     long id = 1
     def storage = new TreeMap()
     storage[id] = new Transaction(1l, 4l, 5l, 22.1, Status.Open)
-    setupApi(storage, [:], [:])
+    setupApi(storage, new TreeMap(), new TreeMap())
 
     def connection = new URL(
         "http://$endpoint/api/1.0/transactions/$id"
@@ -38,7 +36,7 @@ class TransactionsRestTest extends Specification {
     given:
     long id = 1
     def storage = new TreeMap()
-    setupApi(storage, [:], [:])
+    setupApi(storage, new TreeMap(), new TreeMap())
 
     def connection = new URL(
         "http://$endpoint/api/1.0/transactions/$id"
@@ -47,9 +45,9 @@ class TransactionsRestTest extends Specification {
     expect:
     connection.responseCode == 404
     transformer.toResource(Error.class, EndpointHelpers.grabBody(connection))[0] == new Error(
-       request: "/api/1.0/transactions/$id",
-       errorCode: connection.responseCode,
-       message: "Transaction with id $id not found"
+        request: "/api/1.0/transactions/$id",
+        errorCode: connection.responseCode,
+        message: "Transaction with id $id not found"
     )
   }
 
@@ -58,7 +56,7 @@ class TransactionsRestTest extends Specification {
     long to = 3
     def amount = 22.2
     def storage = new TreeMap<>()
-    def accounts = [(from): new Account(from, 0, new BigDecimal(100)), (to): new Account(to, 0)]
+    def accounts = [(from): new Account(from, 0, new BigDecimal(100)), (to): new Account(to, 0)] as TreeMap
     setupApi(storage, accounts, new TreeMap())
     List<HttpURLConnection> conns = []
     2.times {
@@ -67,7 +65,7 @@ class TransactionsRestTest extends Specification {
       )
       def connection = url.openConnection() as HttpURLConnection
       connection.setRequestMethod("POST")
-      connection.setRequestProperty("Accept", "text/plain")
+      connection.setRequestProperty("Accept", "application/yaml")
       conns.add(connection)
     }
 
@@ -85,32 +83,24 @@ class TransactionsRestTest extends Specification {
     def numberOfTransaction = 100
     def amount = 10
     def storage = new TreeMap<>()
-    def accounts = [(from): new Account(from, 0, new BigDecimal(numberOfTransaction * amount)), (to):
-        new Account(to, 0)]
+    def accounts = [(from): new Account(from, 0, new BigDecimal(numberOfTransaction * amount)),
+                    (to)  : new Account(to, 0)] as TreeMap
     setupApi(storage, accounts, new TreeMap())
-    List<HttpURLConnection> conns = []
-    numberOfTransaction.times {
-      def url = new URL(
-          "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
-      )
-      def connection = url.openConnection() as HttpURLConnection
-      connection.setRequestMethod("POST")
-      connection.setRequestProperty("Accept", "text/plain")
-      conns.add(connection)
-    }
-    conns.parallelStream().forEach({ it -> it.responseCode })
+    EndpointHelpers.runParallel(numberOfTransaction,
+        "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount") { it -> it.responseCode }
 
     expect:
     storage.size() == numberOfTransaction
     accounts[from].amount == BigDecimal.ZERO
   }
 
+
   @Unroll
   def "POST create should fail if #account account is missing"() {
     given:
     def amount = 22.2
     def storage = new TreeMap<>()
-    setupApi(storage, accounts, [:])
+    setupApi(storage, accounts, new TreeMap())
 
     when:
     def url = new URL(
@@ -118,15 +108,15 @@ class TransactionsRestTest extends Specification {
     )
     def connection = url.openConnection() as HttpURLConnection
     connection.setRequestMethod("POST")
-    connection.setRequestProperty("Accept", "text/plain")
+    connection.setRequestProperty("Accept", "application/yaml")
 
     then:
     connection.responseCode == 404
 
     where:
-    from | to | accounts
-    -1   | -1 | [:]
-    1    | -1 | [(from): new Account(from, 0)]
+    from | to  | accounts
+    -1l  | -1l | [:] as TreeMap
+    1l   | -1l | [(from): new Account(from, 0)] as TreeMap
 
     account = from == -1 ? "from" : "to"
   }
@@ -136,20 +126,20 @@ class TransactionsRestTest extends Specification {
     long to = 2
     def amount = 22.2
     def storage = new TreeMap<>()
-    def accounts = [(from): new Account(from, 0), (to): new Account(to, 0)]
-    setupApi(storage, accounts, [:])
+    def accounts = [(from): new Account(from, 0), (to): new Account(to, 0)] as TreeMap
+    setupApi(storage, accounts, new TreeMap())
     def url = new URL(
         "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )
     def connection = url.openConnection() as HttpURLConnection
     connection.setRequestMethod("POST")
-    connection.setRequestProperty("Accept", "text/plain")
+    connection.setRequestProperty("Accept", "application/yaml")
 
     expect:
     connection.responseCode == 424
 
     def bodyError = transformer.toResource(Error.class, EndpointHelpers.grabBody(connection))
-    with (bodyError[0]) {
+    with(bodyError[0]) {
       request == "/api/1.0/transactions/from/$from/to/$to/amount/$amount"
       errorCode == connection.responseCode
       message == "Account with id $from balance to low [need=$amount; have=0]"
@@ -163,14 +153,15 @@ class TransactionsRestTest extends Specification {
     def amount = 42.0
     def storage = new TreeMap<>()
     def fromStaringAmount = new BigDecimal(100)
-    def accounts = [(from): new Account(from, 0, fromStaringAmount), (to): new Account(to, 0)]
-    setupApi(storage, accounts, [:])
+    def accounts = [(from): new Account(from, 0, fromStaringAmount), (to): new Account(to, 0)] as
+        TreeMap
+    setupApi(storage, accounts, new TreeMap())
     def url = new URL(
         "http://$endpoint/api/1.0/transactions/from/$from/to/$to/amount/$amount"
     )
     def connection = url.openConnection() as HttpURLConnection
     connection.setRequestMethod("POST")
-    connection.setRequestProperty("Accept", "text/plain")
+    connection.setRequestProperty("Accept", "application/yaml")
 
     expect:
     connection.responseCode == 200
