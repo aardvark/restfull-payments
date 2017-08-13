@@ -1,5 +1,5 @@
 group 'ru.latuhin'
-version '0.9.0'
+version '0.9.0-SNAPSHOT'
 
 apply plugin: 'groovy'
 apply plugin: 'java'

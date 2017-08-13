@@ -12,3 +12,7 @@ Run jar created after releaseJar with simple 'java -jar'
 
 By default server will be run on 4567 port. 
 Port can be changed by setting 'api.bind.port' system property to the required port. 
+
+**Testing**
+
+Run jar with 'bootstrap' argument to create bootstrap users/accounts
