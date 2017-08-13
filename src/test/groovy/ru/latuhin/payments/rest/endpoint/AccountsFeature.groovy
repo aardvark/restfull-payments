@@ -11,7 +11,7 @@ import spock.lang.Specification
 import static ru.latuhin.payments.rest.endpoint.EndpointHelpers.setupApi
 
 
-class AccountsRestTest extends Specification {
+class AccountsFeature extends Specification {
   String endpoint = 'localhost:4567'
   YamlTransformer transformer = new YamlTransformer()
   @Shared
@@ -27,25 +27,24 @@ class AccountsRestTest extends Specification {
     app.stop()
   }
 
-  def "GET request should resolve"() {
-    given:
+  def "GET request for Account"() {
+    given: "HTTP GET request for existing account"
     long id = 1
-    long userId = 1
     def accounts = new TreeMap()
-    accounts[id] = new Account(id, userId)
+    accounts[id] = new Account(id, id)
     setupApi(new TreeMap(), accounts, new TreeMap())
     def connection = new URL(
         "http://$endpoint/api/1.0/accounts/$id"
     ).openConnection() as HttpURLConnection
 
-    expect:
+    expect: "valid Account returned"
     connection.responseCode == 200
     def accountAnswer = transformer.toResource(Account.class, EndpointHelpers.grabBody(connection))
     accountAnswer[0] == accounts[1l]
   }
 
   def "GET request should return error if account not present"() {
-    given:
+    given: "GET request for non-exsiting account"
     long id = 1
     long userId = 1
     def accounts = new TreeMap()
@@ -55,7 +54,7 @@ class AccountsRestTest extends Specification {
         "http://$endpoint/api/1.0/accounts/-1"
     ).openConnection() as HttpURLConnection
 
-    expect:
+    expect: "404 response code and valid Error message"
     connection.responseCode == 404
     def body = transformer.toResource(Error.class, EndpointHelpers.grabBody(connection))
     with(body[0]) {
@@ -66,7 +65,7 @@ class AccountsRestTest extends Specification {
   }
 
   def "GET request for transaction sub collection should resolve"() {
-    given:
+    given: "GET request for transactions on present account"
     long fromAccount = 1
     long toAccount = 2
     long userId = 1
@@ -82,7 +81,7 @@ class AccountsRestTest extends Specification {
         "http://$endpoint/api/1.0/accounts/1/transactions"
     ).openConnection() as HttpURLConnection
 
-    expect:
+    expect: "returned transaction list match expected"
     connection.responseCode == 200
     def body = EndpointHelpers.grabBody(connection)
     List<Transaction> transactions = transformer.toResource(Transaction.class, body)
@@ -94,7 +93,7 @@ class AccountsRestTest extends Specification {
   }
 
   def "POST request for account creation should process correctly"() {
-    given:
+    given: "running service"
     long newAccountId = 42
     long newAccountUserId = 1
 
@@ -106,12 +105,12 @@ class AccountsRestTest extends Specification {
 
     def url = new URL("http://$endpoint/api/1.0/accounts/$newAccountId/user/$newAccountUserId")
 
-    when:
+    when: "POST for account issued"
     def connection = url.openConnection() as HttpURLConnection
     connection.setRequestMethod("POST")
     connection.setRequestProperty("Accept", "application/yaml")
 
-    then:
+    then: "new account object returned with accompanying LOCATION header"
     connection.responseCode == 201
     connection.headerFields.get(HttpHeader.LOCATION.asString())[0] == "/api/1" +
         ".0/accounts/1"
@@ -121,7 +120,7 @@ class AccountsRestTest extends Specification {
   }
 
   def "account creation should work correctly in parallel"() {
-    given:
+    given: "running service"
     def newAccountUserId = 1l
     def newAccountId = 1l
     def userStorage = new TreeMap()
@@ -129,7 +128,7 @@ class AccountsRestTest extends Specification {
     def accountStorage = new TreeMap()
     setupApi(new TreeMap(), accountStorage, userStorage)
 
-    when:
+    when: "running parallel request for account creation"
     def codes = EndpointHelpers.runParallel(300,
         "http://$endpoint/api/1.0/accounts/$newAccountId/user/$newAccountUserId",
         { it ->
@@ -138,9 +137,8 @@ class AccountsRestTest extends Specification {
           return [it.responseCode, location.endsWith(id.toString())]
         })
 
-    then:
-    codes.collect({it[0]}).find({ it != 201 }) == null
-    codes.collect({it[1]}).find({ it == false }) == null
-
+    then: "service answers contain valid codes and headers"
+    codes.collect({ it[0] }).find({ it != 201 }) == null
+    codes.collect({ it[1] }).find({ it == false }) == null
   }
 }
