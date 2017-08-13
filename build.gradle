@@ -3,9 +3,10 @@ version '0.9.0-SNAPSHOT'
 
 apply plugin: 'groovy'
 apply plugin: 'java'
+apply plugin: 'application'
 
 sourceCompatibility = 1.8
-
+mainClassName = 'ru.latuhin.payments.rest.endpoint.Launcher'
 repositories {
   mavenCentral()
 }

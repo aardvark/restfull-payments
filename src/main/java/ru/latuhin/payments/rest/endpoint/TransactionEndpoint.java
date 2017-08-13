@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.eclipse.jetty.http.HttpHeader;
 import ru.latuhin.payments.rest.endpoint.dao.Account;
 import ru.latuhin.payments.rest.endpoint.dao.Error;
 import ru.latuhin.payments.rest.endpoint.dao.Transaction;
@@ -73,15 +74,16 @@ public class TransactionEndpoint {
       try {
         transactionWrite.lock();
         transaction = createTransaction(from, to, amount);
+        accountStorage.compute(from, (aLong, account) -> new Account(account, amount));
+        accountStorage.compute(to, (aLong, account) -> new Account(account, amount.negate()));
       } finally {
         transactionWrite.unlock();
       }
-      accountStorage.compute(from, (aLong, account) -> new Account(account, amount));
     } finally {
       accountWrite.unlock();
     }
 
-    response.header("Link", "/api/1.0/transaction/" + transaction.id);
+    response.header(HttpHeader.LOCATION.toString(), "/api/1.0/transaction/" + transaction.id);
     return transactionStorage.get(transaction.id);
   }
 

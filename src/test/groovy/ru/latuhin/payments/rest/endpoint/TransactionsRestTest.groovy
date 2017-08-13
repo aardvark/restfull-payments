@@ -1,5 +1,6 @@
 package ru.latuhin.payments.rest.endpoint
 
+import org.eclipse.jetty.http.HttpHeader
 import ru.latuhin.payments.rest.endpoint.dao.Account
 import ru.latuhin.payments.rest.endpoint.dao.Error
 import ru.latuhin.payments.rest.endpoint.dao.Status
@@ -72,9 +73,11 @@ class TransactionsRestTest extends Specification {
     expect:
     conns.collect { it.responseCode } == [200, 200]
     conns.collect {
-      it.getHeaderField("Link")
+      it.getHeaderField(HttpHeader.LOCATION.toString())
     } == ["/api/1.0/transaction/1", "/api/1.0/transaction/2"]
     storage.size() == 2
+    accounts[from].amount == 100 - (22.2 * 2)
+    accounts[to].amount == (22.2 * 2)
   }
 
   def "POST transaction should work correctly in parallel"() {
